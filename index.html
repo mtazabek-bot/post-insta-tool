@@ -237,6 +237,10 @@ header h1 b{color:var(--ui-acc)}
 .seg button:hover{background:var(--ui-hover)}
 .seg button.on{background:var(--ui-acc); color:#fff}
 label.fld{display:flex; flex-direction:column; gap:5px; font-size:13px; color:var(--ui-mute)}
+button.lnk{background:none; border:0; padding:0; color:var(--ui-acc); text-decoration:underline;
+           font-size:13px; cursor:pointer}
+.cardbox .bar button .lbl{font-size:13px}
+.cardbox .bar button.on{border-color:var(--ui-acc); color:var(--ui-acc); background:var(--ui-tint)}
 .rowline{display:flex; align-items:baseline; gap:6px}
 .rowline b{color:var(--ui-ink); font-size:15px}
 input[type=range]{
@@ -351,6 +355,19 @@ svg.i{width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:2;
 .cardbox.dropping canvas{box-shadow:0 0 0 4px var(--ui-acc), 0 14px 34px rgba(18,18,18,.22)}
 
 /* правка прямо на карточке: поле встаёт ровно на зону текста */
+/* панель начертаний над полем правки */
+.ontb{
+  position:absolute; z-index:7; display:flex; gap:4px; align-items:center; padding:4px;
+  background:var(--ui-panel); border:1px solid var(--ui-line); border-radius:10px;
+  box-shadow:0 8px 22px rgba(18,18,18,.18); font-size:14px;
+}
+.ontb button{
+  min-width:34px; height:30px; border:1px solid transparent; border-radius:7px;
+  background:transparent; color:var(--ui-ink); font-size:14px;
+}
+.ontb button:hover{background:var(--ui-hover)}
+.ontb button.on{background:var(--ui-tint); border-color:var(--ui-acc); color:var(--ui-acc)}
+.ontb .pt{min-width:52px; text-align:center; color:var(--ui-mute); font-size:13px}
 textarea.oncard{
   position:absolute; z-index:6; margin:0; padding:2px 6px; resize:none; overflow:hidden;
   font-family:Arsenal,Georgia,serif; color:#121212; background:rgba(255,255,255,.94);
@@ -457,6 +474,8 @@ body.picking #pick{display:grid}
       <input type="range" id="fPad" min="40" max="200" step="2" value="88">
       <span class="hint" id="padNote"></span>
     </div>
+    <div id="hiddenBox" class="hint" style="display:none"></div>
+
     <details class="sec">
       <summary>технические надписи</summary>
       <div>
@@ -531,6 +550,9 @@ const THEMES = {
   tazabek:{proj:'tazabek', t:'светлая', bg:'#F4F5F7', ink:'#121212', mute:'#5A5F66', accent:'#9a2d25', line:'rgba(18,18,18,.14)', chip:'#FFFFFF', shade:'rgba(18,18,18,.07)'},
   noir:   {proj:'tazabek', dark:true, t:'тёмная',  bg:'#121212', ink:'#F4F5F7', mute:'#A2A7AE', accent:'#E4564A', line:'rgba(244,245,247,.20)', chip:'#1D1D1D', shade:'rgba(244,245,247,.09)'},
   paper:  {proj:'tazabek', t:'бумага',  bg:'#F0EEE6', ink:'#141413', mute:'#6B6862', accent:'#C25A34', line:'rgba(20,20,19,.16)', chip:'#FBFAF6', shade:'rgba(20,20,19,.06)'},
+  /* «чистый» — белый холст без единой технической надписи и без логотипа: у Turmush он
+     стоит первым, то есть по умолчанию. Обложка при этом остаётся заставкой. */
+  turmush_clean:{proj:'turmush', bare:true, t:'чистый', bg:'#FFFFFF', ink:'#121212', mute:'#5D5470', accent:'#7952B3', line:'rgba(18,18,18,.12)', chip:'#FFFFFF', shade:'rgba(18,18,18,.05)'},
   turmush:      {proj:'turmush', t:'светлая', bg:'#FBF8FE', ink:'#1A1226', mute:'#5D5470', accent:'#7952B3', line:'rgba(26,18,38,.14)', chip:'#FFFFFF', shade:'#F1DDFF'},
   turmush_lilac:{proj:'turmush', t:'сирень',  bg:'#F1DDFF', ink:'#1A1226', mute:'#5A4A73', accent:'#5E3D93', line:'rgba(26,18,38,.16)', chip:'#FCF7FF', shade:'rgba(94,61,147,.13)'},
   turmush_dark: {proj:'turmush', dark:true, t:'тёмная',  bg:'#171223', ink:'#F4F0FA', mute:'#A79CB8', accent:'#BFA3E8', line:'rgba(244,240,250,.20)', chip:'#221A33', shade:'rgba(241,221,255,.10)'}
@@ -570,7 +592,11 @@ const UI = {
   grid:  svg('M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z'),
   proj:  svg('M4 7h7l2 2h7v9H4zM4 7V5h5l2 2'),
   copy:  svg('M9 9h11v11H9zM4 15V4h11'),
-  wand:  svg('M5 19l9-9M14 5l1 3 3 1-3 1-1 3-1-3-3-1 3-1zM19 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z')
+  wand:  svg('M5 19l9-9M14 5l1 3 3 1-3 1-1 3-1-3-3-1 3-1zM19 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z'),
+  del:   svg('M6 7h12M9 7V5h6v2M8 7l1 13h6l1-13M11 11v6M14 11v6'),
+  crop:  svg('M7 3v14h14M3 7h14v14'),
+  fitin: svg('M4 4h16v16H4zM8 9h8v6H8z'),
+  frame: svg('M4 8h16M4 16h16M8 4v16M16 4v16')
 };
 const KINDS = {
   cover: 'обложка / хук',
@@ -660,7 +686,7 @@ const PROJECTS = {
     t:'Turmush', logo:'turmush', cover:'band', site:'turmush.kg', tag:'#turmush',
     about:'Акцент #7952B3 и мягкий #f1ddff. Обложка — заставка поверх фото: плашка с аккаунтом, полоса заголовка, строка сайта.',
     dots:['#7952B3', '#F1DDFF', '#121212'],
-    themes:['turmush', 'turmush_lilac', 'turmush_dark'],
+    themes:['turmush_clean', 'turmush', 'turmush_lilac', 'turmush_dark'],
     band:'#110B1A', soft:'#F1DDFF', softInk:'#5E3D93',
     lang:'ky',
     demo:{title:'Жаңылыктын башын коюңуз',
@@ -680,6 +706,7 @@ const PROJECTS = {
    ============================================================================ */
 const S = {
   proj:'tazabek', fmt:'4x5', theme:'tazabek', safe:false, feed:false, pad:PAD, zoom:'m', sel:null,
+  hide:{}, pmode:'pic',        /* pmode: чем двигаем — картинкой внутри рамки или самой рамкой */
   demo:true,
   brand:{mark:'T', rubric:'экономика', handle:'@tazabek', date:'', source:'Источник: ', foot:'',
          swipe:'листайте  →', ctaTitle:'Полный материал — на tazabek.kg',
@@ -763,6 +790,9 @@ function buildSlides(raw, want){
   ss.forEach(s => (firstNumber(s) && s.length < 220 ? withNum : plain).push(s));
 
   const out = [];
+  /* на чистом холсте автосборка не ставит даже иконок: белый лист должен быть белым.
+     Иконку в этом режиме можно выбрать руками — рисоваться она будет. */
+  const dec = !T().bare;
   out.push({kind:'cover', title:shorten(head, 110), text:shorten(lead, 130), icon:'none', img:null});
   const used = new Set();
   /* цифровые слайды: сначала предложения с единицей измерения — там настоящая новость */
@@ -770,7 +800,7 @@ function buildSlides(raw, want){
   withNum.slice(0, 2).forEach((s, i) => {
     const n = firstNumber(s), pp = numParts(s, n);
     out.push({kind:'number', title:pp.label, num:n.val, unit:n.unit,
-              text:pp.tail, icon:i === 0 ? 'chart' : 'coin', img:null});
+              text:pp.tail, icon:dec ? (i === 0 ? 'chart' : 'coin') : 'none', img:null});
     used.add(s);
   });
   /* лид обложки — первое предложение, которое не ушло на цифровой слайд:
@@ -790,14 +820,21 @@ function buildSlides(raw, want){
   });
   out.push({kind:'cta', title:S.brand.ctaTitle || '',
             items:String(S.brand.ctaItems || '').split('\n').filter(t => t.trim()),
-            icon:'save', img:null});
+            icon:dec ? 'save' : 'none', img:null});
   return out.slice(0, Math.max(3, want));
 }
 
 /* ============================================================================
    4. РИСОВАНИЕ КАРТОЧКИ (единый рендер для превью и экспорта)
    ============================================================================ */
-function font(ctx, weight, size){ ctx.font = weight + ' ' + size + 'px Arsenal, Georgia, serif'; }
+/* Arsenal вшит в трёх начертаниях: 400, 700 и 400 italic. Жирный курсив браузер
+   синтезирует наклоном — засечки при этом грязнее, поэтому сочетание помечено в README. */
+function font(ctx, weight, size, italic){
+  ctx.font = (italic ? 'italic ' : '') + weight + ' ' + size + 'px Arsenal, Georgia, serif';
+}
+/* Пол кегля: 40 px по типографике barskoon_bedel_3d (README, «Кегль нигде не меньше 40 px,
+   заголовки от 64»). Ниже этого авто-подбор не опускается ни в одной раскладке. */
+const MINPT = 40;
 function wrap(ctx, text, maxW){
   const words = String(text).split(/\s+/), lines = [];
   let cur = '';
@@ -810,42 +847,99 @@ function wrap(ctx, text, maxW){
   return lines;
 }
 /* подбор кегля: текст обязан влезть в отведённую высоту, обрезать нельзя */
-function fit(ctx, text, maxW, maxH, start, min, lh, weight){
+function fit(ctx, text, maxW, maxH, start, min, lh, weight, italic){
+  min = Math.max(MINPT, min);
+  start = Math.max(start, min);
   for (let s = start; s >= min; s -= 2){
-    font(ctx, weight, s);
+    font(ctx, weight, s, italic);
     const lines = wrap(ctx, text, maxW);
     if (lines.length * s * lh <= maxH) return {size:s, lines, lh};
   }
-  font(ctx, weight, min);
+  font(ctx, weight, min, italic);
   return {size:min, lines:wrap(ctx, text, maxW), lh};
 }
 function drawLines(ctx, o, x, y, color){
   ctx.fillStyle = color;
-  font(ctx, ctx.__w || '400', o.size);
+  font(ctx, ctx.__w || '400', o.size, ctx.__i);
   o.lines.forEach((l, i) => ctx.fillText(l, x, y + o.size * .82 + i * o.size * o.lh));
   return y + o.lines.length * o.size * o.lh;
 }
-/* BSC — множитель кегля текстового блока (пользователь тянет колесом), ZONES — приёмник
-   зон текста для попадания мышью. При BSC === 1 кегли остаются ровно теми же числами,
-   что и до появления масштабирования: раскладка по умолчанию не смещается ни на пиксель. */
-let BSC = 1, ZONES = null;
-const sc1 = v => BSC === 1 ? v : Math.round(v * BSC);
-const scMin = v => BSC === 1 ? v : Math.max(28, Math.round(v * BSC));
+/* У каждого элемента карточки своя рамка: смещение, ширина, высота и множитель кегля.
+   Хранятся по имени поля, поэтому заголовок, лид, цифра, пункт списка и любая техническая
+   надпись двигаются и тянутся независимо — как отдельные объекты в макете.
+   Пустая рамка = раскладка по умолчанию, пиксель в пиксель прежняя. */
+const OFF0 = {dx:0, dy:0, dw:0, dh:0, sc:1, b:null, i:false};
+let ZONES = null, CURSL = null;
+function offOf(sl, key){
+  const o = sl && sl.off ? sl.off[key] : null;
+  return o ? {dx:+o.dx || 0, dy:+o.dy || 0, dw:+o.dw || 0, dh:+o.dh || 0, sc:+o.sc || 1,
+              b:o.b == null ? null : !!o.b, i:!!o.i} : OFF0;
+}
+function offEdit(sl, key){
+  sl.off = sl.off || {};
+  if (!sl.off[key]) sl.off[key] = Object.assign({}, OFF0);
+  return sl.off[key];
+}
+const sc1 = (v, k) => k === 1 ? v : Math.round(v * k);
+const scMin = (v, k) => k === 1 ? v : Math.max(28, Math.round(v * k));
 function block(ctx, text, x, y, maxW, maxH, start, min, lh, weight, color, field){
-  ctx.__w = weight;
-  const o = fit(ctx, text, maxW, maxH, sc1(start), scMin(min), lh, weight);
-  const y2 = drawLines(ctx, o, x, y, color);
-  if (ZONES && field) ZONES.push({f:field, x:x, y:y, w:maxW, h:Math.max(o.size, y2 - y),
-                                  size:o.size, lh:lh, weight:weight});
-  return y2;
+  const o = field ? offOf(CURSL, field) : OFF0;
+  const bx = x + o.dx, by = y + o.dy;
+  const bw = Math.max(160, maxW + o.dw), bh = Math.max(56, maxH + o.dh);
+  const wg = o.b == null ? weight : (o.b ? '700' : '400');
+  ctx.__w = wg; ctx.__i = !!o.i;
+  const fo = fit(ctx, text, bw, bh, sc1(start, o.sc), scMin(min, o.sc), lh, wg, !!o.i);
+  const y2 = drawLines(ctx, fo, bx, by, color);
+  ctx.__i = false;
+  const drawn = Math.max(fo.size, y2 - by);
+  if (ZONES && field) ZONES.push({f:field, x:bx, y:by, w:bw, h:o.dh ? bh : drawn,
+                                  size:fo.size, lh:lh, weight:wg, italic:!!o.i});
+  /* поток отсчитывается от исходного y: сдвинутая рамка не тащит за собой соседние блоки */
+  return y + (y2 - by);
 }
-const zKey = z => z.f + (z.idx == null ? '' : ':' + z.idx);
-function zoneValue(sl, z){
-  return z.f === 'items' ? String((sl.items || [])[z.idx] || '') : String(sl[z.f] || '');
+const zKey = z => z.f;
+const hidden = k => !!S.hide[k];
+/* Что значит щёлкнуть по объекту: откуда взять текст для правки, куда его вернуть и что
+   делает удаление. Технические надписи живут в S.brand и общие для всех слайдов, поэтому
+   и скрываются глобально — в S.hide, откуда их можно вернуть кнопкой в панели. */
+function fieldOps(sl, key){
+  const m = /^items:(\d+)$/.exec(key);
+  if (m){
+    const k = +m[1];
+    return {get:() => String((sl.items || [])[k] || ''),
+            set:v => { sl.items = (sl.items || []).slice(); sl.items[k] = v; },
+            del:() => { sl.items = (sl.items || []).filter((_, j) => j !== k); },
+            what:'пункт списка'};
+  }
+  if (key.indexOf('brand.') === 0){
+    const f = key.slice(6);
+    return {get:() => String(S.brand[f] || ''),
+            set:v => { S.brand[f] = v; syncBrandInputs(); },
+            del:() => { S.hide[key] = true; },
+            what:'техническая надпись'};
+  }
+  if (key === 'logo')    return {del:() => { S.hide.logo = true; }, what:'логотип'};
+  if (key === 'counter') return {del:() => { S.hide.counter = true; }, what:'счётчик'};
+  if (key === 'rule')    return {del:() => { S.hide.rule = true; }, what:'линейка подвала'};
+  if (key === 'pattern') return {del:() => { S.hide.pattern = true; }, what:'фоновый узор'};
+  if (key === 'icon')    return {del:() => { sl.icon = 'none'; }, what:'иконка'};
+  if (key === 'photo')   return {del:() => { sl.img = null; sl.frame = null; }, what:'фотография'};
+  return {get:() => String(sl[key] || ''), set:v => { sl[key] = v; },
+          del:() => { sl[key] = ''; }, what:'текст'};
 }
-function zoneSet(sl, z, v){
-  if (z.f === 'items'){ sl.items = (sl.items || []).slice(); sl.items[z.idx] = v; }
-  else sl[z.f] = v;
+const ZTITLE = {logo:'логотип', counter:'счётчик', rule:'линейка', pattern:'фон', icon:'иконка',
+                photo:'фото', title:'заголовок', text:'текст', num:'цифра', unit:'единица',
+                'brand.rubric':'рубрика', 'brand.source':'источник', 'brand.swipe':'подсказка',
+                'brand.handle':'аккаунт', 'brand.date':'дата', 'brand.foot':'строка сайта'};
+const zTitle = k => ZTITLE[k] || (/^items:/.test(k) ? 'пункт ' + (+k.split(':')[1] + 1) : k);
+const zoneValue = (sl, z) => { const o = fieldOps(sl, z.f); return o.get ? o.get() : ''; };
+const zoneSet = (sl, z, v) => { const o = fieldOps(sl, z.f); if (o.set) o.set(v); };
+/* Иконка слайда — тоже объект: двигается, масштабируется и удаляется. */
+function drawIcon(ctx, sl, x, y, size, color, width){
+  if (!sl.icon || sl.icon === 'none') return;
+  const o = offOf(sl, 'icon'), sz = Math.round(size * o.sc);
+  icon(ctx, sl.icon, x + o.dx, y + o.dy, sz, color, width);
+  if (ZONES) ZONES.push({f:'icon', x:x + o.dx, y:y + o.dy, w:sz, h:sz, fixed:true});
 }
 function icon(ctx, name, x, y, size, color, width){
   const ic = ICONS[name];
@@ -861,28 +955,59 @@ function roundRect(ctx, x, y, w, h, r){
   ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
   ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 }
-function cover(ctx, im, x, y, w, h, crop){
+/* Рамка изображения: пока пользователь её не тянул, это вся карточка и режим crop —
+   то есть прежнее поведение. Тронул ручку — рамка становится своим объектом. */
+function picFrame(sl, W, H){
+  const f = sl.frame;
+  if (f) return {x:f.x, y:f.y, w:f.w, h:f.h, fit:f.fit || 'cover', full:false};
+  return {x:0, y:0, w:W, h:H, fit:'cover', full:true};
+}
+function picFrameEdit(sl, W, H){
+  if (!sl.frame){ const fr = picFrame(sl, W, H); sl.frame = {x:fr.x, y:fr.y, w:fr.w, h:fr.h, fit:fr.fit}; }
+  return sl.frame;
+}
+/* crop заполняет рамку и обрезает лишнее, contain вписывает кадр целиком — по краям
+   остаётся фон. Масштаб и сдвиг работают в обоих режимах. */
+function drawPic(ctx, im, fr, crop){
   const z = (crop && crop.z) || 1, ox = (crop && crop.x) || 0, oy = (crop && crop.y) || 0;
-  const k = Math.max(w / im.naturalWidth, h / im.naturalHeight) * z;
+  const kx = fr.w / im.naturalWidth, ky = fr.h / im.naturalHeight;
+  const k = (fr.fit === 'contain' ? Math.min(kx, ky) : Math.max(kx, ky)) * z;
   const dw = im.naturalWidth * k, dh = im.naturalHeight * k;
-  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
-  ctx.drawImage(im, x + (w - dw) / 2 + ox, y + (h - dh) / 2 + oy, dw, dh);
+  ctx.save(); ctx.beginPath(); ctx.rect(fr.x, fr.y, fr.w, fr.h); ctx.clip();
+  ctx.drawImage(im, fr.x + (fr.w - dw) / 2 + ox, fr.y + (fr.h - dh) / 2 + oy, dw, dh);
   ctx.restore();
 }
 
-/* Заставка Turmush по редакционному образцу: плашка с аккаунтом в левом верхнем
-   углу, тёмная полоса с заголовком снизу, узкая строка сайта под ней.
-   От образца отличается набором (Arsenal), градиентами вместо резких линеек
-   и тем, что заголовок сам подбирает кегль под высоту своей полосы. */
-function turmushCover(ctx, s, W, H, th, b, onPhoto, O){
-  O = O || {dx:0, dy:0, dw:0, sc:1};
+/* Заставка Turmush по редакционному образцу: плашка с аккаунтом в левом верхнем углу,
+   тёмная полоса с заголовком снизу, узкая строка сайта под ней.
+
+   Высота полосы считается ОТ ТЕКСТА, а не задана числом: заголовок не сжимается до
+   нечитаемого кегля — полоса растёт под него. Ручкой снизу её можно растянуть ещё,
+   это то же поле dh, что у обычных текстовых рамок. Если полоса упирается в кадр,
+   кегль всё-таки уменьшается: карточка не должна разъезжаться. */
+function turmushCover(ctx, s, W, H, th, b, onPhoto){
   const p = PROJECTS.turmush, k = H / 1350, R = v => Math.round(v * k);
-  const strip = R(92), bandH = R(210);
-  /* в сторис нижние 400 px отданы интерфейсу Instagram: полосу и строку сайта
-     поднимаем над ними, иначе заголовок уедет под подпись и кнопки */
-  const lift = S.fmt === '9x16' ? R(330) : 0;
-  const bandY = H - strip - bandH - lift;
+  const O = offOf(s, 'title');
   const pad = R(58);
+  const strip = hidden('brand.foot') ? 0 : R(92);
+  const lift = S.fmt === '9x16' ? R(330) : 0;   /* в сторис нижние 400 px закрывает интерфейс */
+  const srcH = hidden('brand.source') ? 0 : R(46);
+
+  /* сначала набираем заголовок: от его высоты зависит полоса */
+  const titleW = Math.max(R(300), W - pad * 2 - R(40) + O.dw);
+  ctx.__w = '700';
+  const bandMax = H - strip - lift - R(180);
+  let fo = fit(ctx, (s.title || '').toUpperCase(), titleW, 1e7,
+               sc1(R(66), O.sc), sc1(R(38), O.sc), 1.08, '700');
+  let textH = fo.lines.length * fo.size * fo.lh;
+  let bandH = Math.max(R(120), textH + R(52) + srcH + O.dh);
+  if (bandH > bandMax){                       /* упёрлись в кадр — теперь уже сжимаем кегль */
+    fo = fit(ctx, (s.title || '').toUpperCase(), titleW, bandMax - R(52) - srcH,
+             sc1(R(66), O.sc), sc1(R(34), O.sc), 1.08, '700');
+    textH = fo.lines.length * fo.size * fo.lh;
+    bandH = bandMax;
+  }
+  const bandY = H - strip - bandH - lift;
 
   if (onPhoto){
     /* кадр уходит в полосу постепенно: линейка на стыке читается как брак печати */
@@ -892,11 +1017,14 @@ function turmushCover(ctx, s, W, H, th, b, onPhoto, O){
     ctx.fillStyle = sc; ctx.fillRect(0, bandY - R(360), W, R(360));
   } else if ((s.text || '').trim()){
     /* без фотографии затемнять нечего — градиент по светлому фону выглядел бы грязью.
-       Свободную середину занимает лид, иначе карточка читается как незагрузившийся кадр. */
+       Свободную середину занимает лид, у него своя рамка. */
+    const OL = offOf(s, 'text');
     ctx.__w = '400';
-    const lead = fit(ctx, s.text, W - pad * 2 + O.dw, bandY - R(300), R(46), R(32), 1.34, '400');
-    drawLines(ctx, lead, pad + O.dx, R(200) + O.dy, th.ink);
-    if (ZONES) ZONES.push({f:'text', x:pad + O.dx, y:R(200) + O.dy, w:W - pad * 2 + O.dw,
+    const lead = fit(ctx, s.text, Math.max(R(300), W - pad * 2 + OL.dw), bandY - R(300) + OL.dh,
+                     sc1(R(46), OL.sc), sc1(R(32), OL.sc), 1.34, '400');
+    drawLines(ctx, lead, pad + OL.dx, R(200) + OL.dy, th.ink);
+    if (ZONES) ZONES.push({f:'text', x:pad + OL.dx, y:R(200) + OL.dy,
+                           w:Math.max(R(300), W - pad * 2 + OL.dw),
                            h:Math.max(lead.size, lead.lines.length * lead.size * lead.lh),
                            size:lead.size, lh:1.34, weight:'400'});
   }
@@ -908,56 +1036,70 @@ function turmushCover(ctx, s, W, H, th, b, onPhoto, O){
   ctx.fillStyle = bg; ctx.fillRect(0, bandY, W, bandH);
 
   /* волосяная линия сверху: от акцента к мягкому, вместо жирной рамки образца */
-  const ln = ctx.createLinearGradient(0, 0, W, 0);
-  ln.addColorStop(0, '#7952B3'); ln.addColorStop(1, p.soft);
-  ctx.fillStyle = ln; ctx.fillRect(0, bandY - R(5), W, R(5));
+  if (!hidden('rule')){
+    const ln = ctx.createLinearGradient(0, 0, W, 0);
+    ln.addColorStop(0, '#7952B3'); ln.addColorStop(1, p.soft);
+    ctx.fillStyle = ln; ctx.fillRect(0, bandY - R(5), W, R(5));
+  }
 
-  /* заголовок капителью, кегль подбирается под полосу — обрезать нельзя */
-  ctx.__w = '700';
-  const o = fit(ctx, (s.title || '').toUpperCase(), W - pad * 2 - R(40), bandH - R(88), R(66), R(38), 1.08, '700');
-  drawLines(ctx, o, pad, bandY + R(24), '#fff');
-  if (ZONES) ZONES.push({f:'title', x:pad, y:bandY + R(24), w:W - pad * 2 - R(40),
-                         h:Math.max(o.size, o.lines.length * o.size * o.lh),
-                         size:o.size, lh:1.08, weight:'700'});
+  /* заголовок капителью; рамка = вся полоса, поэтому ручка снизу тянет именно её */
+  drawLines(ctx, fo, pad + O.dx, bandY + R(24) + O.dy, '#fff');
+  if (ZONES) ZONES.push({f:'title', x:pad + O.dx, y:bandY + R(20) + O.dy, w:titleW,
+                         h:Math.max(textH, bandH - R(28) - srcH), size:fo.size, lh:1.08, weight:'700'});
 
   /* источник обязателен на каждом слайде, заставка не исключение */
-  font(ctx, '400', R(26)); ctx.fillStyle = 'rgba(255,255,255,.82)';
-  ctx.fillText(b.source || '', pad, bandY + bandH - R(24));
+  if (!hidden('brand.source')){
+    font(ctx, '400', R(26)); ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.fillText(b.source || '', pad, bandY + bandH - R(24));
+    if (ZONES) ZONES.push({f:'brand.source', x:pad, y:bandY + bandH - R(50), w:W - pad * 2, h:R(36),
+                           size:R(26), lh:1.1, weight:'400', fixed:true});
+  }
 
   /* нижняя строка — тот самый «менее акцентный» #f1ddff */
-  ctx.fillStyle = p.soft; ctx.fillRect(0, bandY + bandH, W, strip);
-  const foot = (b.foot || '').toUpperCase();
-  font(ctx, '700', R(28)); ctx.fillStyle = p.softInk;
-  ctx.textAlign = 'center';
-  const fx = W / 2, fy = bandY + bandH + strip / 2 + R(10);
-  ctx.fillText(foot, fx, fy);
-  const dom = foot.match(/WWW\.[^\s]+/);       /* домен подчёркнут, как в образце */
-  if (dom){
-    const all = ctx.measureText(foot).width;
-    const pre = ctx.measureText(foot.slice(0, dom.index)).width;
-    ctx.fillRect(fx - all / 2 + pre, fy + R(9), ctx.measureText(dom[0]).width, Math.max(2, R(3)));
+  if (!hidden('brand.foot')){
+    ctx.fillStyle = p.soft; ctx.fillRect(0, bandY + bandH, W, strip);
+    const foot = String(b.foot || '').toUpperCase();
+    font(ctx, '700', R(28)); ctx.fillStyle = p.softInk;
+    ctx.textAlign = 'center';
+    const fx = W / 2, fy = bandY + bandH + strip / 2 + R(10);
+    ctx.fillText(foot, fx, fy);
+    const dom = foot.match(/WWW\.[^\s]+/);     /* домен подчёркнут, как в образце */
+    if (dom){
+      const all = ctx.measureText(foot).width;
+      const pre = ctx.measureText(foot.slice(0, dom.index)).width;
+      ctx.fillRect(fx - all / 2 + pre, fy + R(9), ctx.measureText(dom[0]).width, Math.max(2, R(3)));
+    }
+    ctx.textAlign = 'left';
+    if (ZONES) ZONES.push({f:'brand.foot', x:0, y:bandY + bandH, w:W, h:strip,
+                           size:R(28), lh:1.1, weight:'700', fixed:true});
   }
-  ctx.textAlign = 'left';
 
   /* плашка с аккаунтом вплотную к углу, с акцентным торцом */
-  const chipH = R(72);
-  font(ctx, '700', R(34));
-  const chipW = ctx.measureText(b.handle || '').width + R(112);
-  const cg = ctx.createLinearGradient(0, 0, chipW, 0);
-  cg.addColorStop(0, 'rgba(17,11,26,.96)');
-  cg.addColorStop(.7, 'rgba(17,11,26,.90)');
-  cg.addColorStop(1, 'rgba(17,11,26,0)');
-  ctx.fillStyle = cg; ctx.fillRect(0, 0, chipW, chipH);
-  ctx.fillStyle = '#7952B3'; ctx.fillRect(0, 0, R(8), chipH);
-  ctx.fillStyle = '#fff'; ctx.fillText(b.handle || '', R(34), chipH / 2 + R(12));
+  if (!hidden('brand.handle')){
+    const chipH = R(72);
+    font(ctx, '700', R(34));
+    const chipW = ctx.measureText(b.handle || '').width + R(112);
+    const cg = ctx.createLinearGradient(0, 0, chipW, 0);
+    cg.addColorStop(0, 'rgba(17,11,26,.96)');
+    cg.addColorStop(.7, 'rgba(17,11,26,.90)');
+    cg.addColorStop(1, 'rgba(17,11,26,0)');
+    ctx.fillStyle = cg; ctx.fillRect(0, 0, chipW, chipH);
+    ctx.fillStyle = '#7952B3'; ctx.fillRect(0, 0, R(8), chipH);
+    ctx.fillStyle = '#fff'; ctx.fillText(b.handle || '', R(34), chipH / 2 + R(12));
+    if (ZONES) ZONES.push({f:'brand.handle', x:R(34), y:R(8), w:chipW - R(44), h:chipH - R(16),
+                           size:R(34), lh:1.1, weight:'700', fixed:true});
+  }
 
   /* логотип белым в правом верхнем углу — правый край кадра свободен */
-  const li = logoImage('turmush', '#ffffff');
-  if (li.complete && li.naturalWidth){
-    const lw = R(196);
-    ctx.save(); ctx.globalAlpha = .96;
-    ctx.drawImage(li, W - pad - lw, R(32), lw, lw / LOGO_RATIO.turmush);
-    ctx.restore();
+  if (!hidden('logo')){
+    const li = logoImage('turmush', '#ffffff'), ol = offOf(s, 'logo');
+    if (li.complete && li.naturalWidth){
+      const lw = Math.round(R(196) * ol.sc), lh = lw / LOGO_RATIO.turmush;
+      ctx.save(); ctx.globalAlpha = .96;
+      ctx.drawImage(li, W - pad - lw + ol.dx, R(32) + ol.dy, lw, lh);
+      ctx.restore();
+      if (ZONES) ZONES.push({f:'logo', x:W - pad - lw + ol.dx, y:R(32) + ol.dy, w:lw, h:lh, fixed:true});
+    }
   }
 }
 
@@ -967,10 +1109,16 @@ function drawCard(cv, i, opts){
   const W = f.w, H = f.h;
   cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
-  /* Фотография — фон любого слайда, а не только слайда «фото»: кнопка у карточки ставит
-     её туда, куда пользователь ткнул, и он вправе ждать, что она будет видна. */
-  const onPhoto = s.img != null && S.images[s.img];
+  CURSL = s;
+  ZONES = opts.clean ? null : [];
+  /* Фотография — объект в рамке. Пока рамка во всю карточку и в режиме crop, это фон:
+     текст на нём печатается белым по затемнению. Стоит уменьшить рамку — это уже
+     помещённая картинка, и надписи возвращаются к цветам темы. */
+  const pic = s.img != null && S.images[s.img] ? S.images[s.img].img : null;
+  const fr = pic ? picFrame(s, W, H) : null;
+  const bare = !!th.bare;                       /* чистый холст: ни одной технической надписи */
   const zastavka = PJ().cover === 'band' && s.kind === 'cover';
+  const onPhoto = !!(pic && fr.full && fr.fit === 'cover');
   const ink = onPhoto ? '#fff' : th.ink;
   const mute = onPhoto ? 'rgba(255,255,255,.85)' : th.mute;
   const line = onPhoto ? 'rgba(255,255,255,.32)' : th.line;
@@ -979,110 +1127,135 @@ function drawCard(cv, i, opts){
 
   /* фон */
   ctx.fillStyle = th.bg; ctx.fillRect(0, 0, W, H);
-  if (onPhoto){
-    cover(ctx, S.images[s.img].img, 0, 0, W, H, s.crop);
-    if (!zastavka){                       /* у заставки свои градиенты, второй слой её замутит */
-      const g = ctx.createLinearGradient(0, 0, 0, H);
-      g.addColorStop(0, 'rgba(8,8,10,.18)'); g.addColorStop(.42, 'rgba(8,8,10,.42)');
-      g.addColorStop(1, 'rgba(8,8,10,.88)');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    }
-  } else {
-    /* тихий фоновый узор — свои формы, ничего чужого */
+  if (!pic && !bare && !hidden('pattern')){
+    /* тихий фоновый узор — свои формы, ничего чужого; на чистом холсте его нет */
     ctx.save(); ctx.globalAlpha = .07; ctx.fillStyle = th.accent;
     ctx.beginPath(); ctx.arc(W - 120, 180, 150, 0, 7); ctx.fill();
     ctx.globalAlpha = .10; ctx.strokeStyle = th.accent; ctx.lineWidth = 8;
     [300, 460, 620].forEach(r => { ctx.beginPath(); ctx.arc(W, H - 40, r, 0, 7); ctx.stroke(); });
     ctx.restore();
+    if (ZONES) ZONES.push({f:'pattern', x:0, y:0, w:W, h:H, fixed:true});
+  }
+  if (pic){
+    if (ZONES) ZONES.push({f:'photo', x:fr.x, y:fr.y, w:fr.w, h:fr.h, pic:true});
+    drawPic(ctx, pic, fr, s.crop);
+    if (onPhoto && !zastavka){            /* у заставки свои градиенты, второй слой её замутит */
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, 'rgba(8,8,10,.18)'); g.addColorStop(.42, 'rgba(8,8,10,.42)');
+      g.addColorStop(1, 'rgba(8,8,10,.88)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
   }
 
-  /* шапка и подвал: на заставке их заменяют плашка, полоса и строка сайта */
   const b = S.brand;
   const P = padOf();
   const footY = H - P.b - 40;
-  if (!zastavka){
+
+  /* Технические надписи — такие же объекты, как заголовок: их можно взять, сдвинуть,
+     переписать двойным щелчком и удалить. Скрытые лежат в S.hide и возвращаются из панели. */
+  function label(key, txt, x0, y0, size, weight, color, align){
+    if (hidden(key)) return 0;
+    txt = String(txt == null ? '' : txt);
+    const o = offOf(s, key), sz = Math.max(10, Math.round(size * o.sc));
+    const wg = o.b == null ? weight : (o.b ? '700' : '400');
+    font(ctx, wg, sz, o.i);
+    const w = ctx.measureText(txt).width;
+    const px = (align === 'right' ? x0 - w : x0) + o.dx, py = y0 + o.dy;
+    if (txt.length){
+      ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.fillText(txt, px, py);
+    }
+    if (ZONES) ZONES.push({f:key, x:px, y:py - sz * .82, w:Math.max(48, w), h:sz * 1.12,
+                           size:sz, lh:1.12, weight:wg, italic:!!o.i, fixed:true});
+    return w;
+  }
+
+  /* шапка и подвал: на заставке их заменяют плашка, полоса и строка сайта,
+     на чистом холсте их нет вовсе */
+  if (!zastavka && !bare){
     /* логотип проекта, а не буква: поверх фото и на тёмной теме белым, на светлой акцентом —
        фирменный цвет на тёмном фоне тонет */
-    const lg = logoImage(PJ().logo, (th.dark || onPhoto) ? '#ffffff' : th.accent);
     let after = P.l;
-    if (lg.complete && lg.naturalWidth){
-      const lh = 44, lw = lh * LOGO_RATIO[PJ().logo];
-      ctx.drawImage(lg, P.l, P.t - 2, lw, lh);
-      after = P.l + lw + 30;
-    } else {                       /* страховка на случай, если картинка не успела загрузиться */
-      font(ctx, '700', 34); const mw = ctx.measureText(b.mark || 'T').width;
-      ctx.fillStyle = th.accent; roundRect(ctx, P.l, P.t - 6, mw + 36, 56, 28); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.fillText(b.mark || 'T', P.l + 18, P.t + 32);
-      after = P.l + mw + 60;
+    if (!hidden('logo')){
+      const lg = logoImage(PJ().logo, (th.dark || onPhoto) ? '#ffffff' : th.accent);
+      const ol = offOf(s, 'logo');
+      if (lg.complete && lg.naturalWidth){
+        const lh = Math.round(44 * ol.sc), lw = lh * LOGO_RATIO[PJ().logo];
+        ctx.drawImage(lg, P.l + ol.dx, P.t - 2 + ol.dy, lw, lh);
+        if (ZONES) ZONES.push({f:'logo', x:P.l + ol.dx, y:P.t - 2 + ol.dy, w:lw, h:lh, fixed:true});
+        after = P.l + lw + 30;
+      } else {                     /* страховка на случай, если картинка не успела загрузиться */
+        font(ctx, '700', 34); const mw = ctx.measureText(b.mark || 'T').width;
+        ctx.fillStyle = th.accent; roundRect(ctx, P.l, P.t - 6, mw + 36, 56, 28); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.fillText(b.mark || 'T', P.l + 18, P.t + 32);
+        after = P.l + mw + 60;
+      }
     }
-    font(ctx, '700', 30);
-    ctx.fillStyle = mute;
-    const rub = (b.rubric || '').toUpperCase().split('').join(' ');
-    ctx.fillText(rub, after, P.t + 30);
-    ctx.textAlign = 'right'; ctx.fillText((i + 1) + '/' + n, W - P.r, P.t + 30); ctx.textAlign = 'left';
+    label('brand.rubric', (b.rubric || '').toUpperCase().split('').join(' '),
+          after, P.t + 30, 30, '700', mute);
+    label('counter', (i + 1) + '/' + n, W - P.r, P.t + 30, 30, '700', mute, 'right');
 
-    ctx.strokeStyle = line; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(P.l, footY - 26); ctx.lineTo(W - P.r, footY - 26); ctx.stroke();
-    ctx.__w = '400'; font(ctx, '400', 28); ctx.fillStyle = mute;
-    wrap(ctx, b.source || '', W - P.l - P.r - 300).slice(0, 2)
-      .forEach((l, k) => ctx.fillText(l, P.l, footY + 4 + k * 34));
-    ctx.textAlign = 'right';
-    if (i < n - 1){
-      font(ctx, '700', 30); ctx.fillStyle = acc;
-      ctx.fillText(b.swipe || '', W - P.r, footY + 4);
-    } else {
-      font(ctx, '700', 30); ctx.fillStyle = ink;
-      ctx.fillText(b.handle || '', W - P.r, footY + 4);
+    if (!hidden('rule')){
+      ctx.strokeStyle = line; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(P.l, footY - 26); ctx.lineTo(W - P.r, footY - 26); ctx.stroke();
+      if (ZONES) ZONES.push({f:'rule', x:P.l, y:footY - 34, w:W - P.l - P.r, h:16, fixed:true});
     }
+    if (!hidden('brand.source')){
+      const os = offOf(s, 'brand.source'), ss = Math.round(28 * os.sc);
+      ctx.__w = '400'; font(ctx, '400', ss); ctx.fillStyle = mute; ctx.textAlign = 'left';
+      const ls = wrap(ctx, b.source || '', W - P.l - P.r - 300 + os.dw).slice(0, 2);
+      ls.forEach((l, k) => ctx.fillText(l, P.l + os.dx, footY + 4 + os.dy + k * ss * 1.2));
+      if (ZONES) ZONES.push({f:'brand.source', x:P.l + os.dx, y:footY + 4 + os.dy - ss * .82,
+                             w:Math.max(160, W - P.l - P.r - 300 + os.dw),
+                             h:Math.max(ss, ls.length * ss * 1.2), size:ss, lh:1.2, weight:'400'});
+    }
+    if (i < n - 1) label('brand.swipe', b.swipe, W - P.r, footY + 4, 30, '700', acc, 'right');
+    else           label('brand.handle', b.handle, W - P.r, footY + 4, 30, '700', ink, 'right');
     ctx.textAlign = 'left';
   }
 
   /* тело */
-  /* off — то, что пользователь натянул мышью: смещение блока, изменение ширины, масштаб кегля.
-     Пустое off = прежняя раскладка. */
-  const O = Object.assign({dx:0, dy:0, dw:0, sc:1}, s.off || {});
-  BSC = O.sc;
-  ZONES = opts.clean ? null : [];
-  const x = P.l + O.dx, maxW = Math.max(240, W - P.l - P.r + O.dw);
-  const top = P.t + 90 + O.dy, bot = footY - 70, avail = Math.max(240, footY - 70 - top);
+  const x = P.l, maxW = W - P.l - P.r;
+  const top = P.t + (bare ? 0 : 90), bot = bare ? H - P.b : footY - 70;
+  const avail = Math.max(240, bot - top);
   let y = top;
 
   if (zastavka){
-    turmushCover(ctx, s, W, H, th, b, !!onPhoto, O);
+    turmushCover(ctx, s, W, H, th, b, !!onPhoto);
 
   } else if (s.kind === 'cover'){
     const hasDate = !!(b.date || '').trim();
     const hTitle = Math.min(avail * .62, avail - (s.text ? 200 : 0));
     y = top + Math.max(0, (avail - (hTitle + (s.text ? 170 : 0))) * .38);
-    if (hasDate){
-      font(ctx, '700', 32); ctx.fillStyle = acc;
-      ctx.fillText(b.date.toUpperCase().split('').join(' '), x, y + 26); y += 74;
+    if (hasDate && !bare){
+      label('brand.date', b.date.toUpperCase().split('').join(' '), x, y + 26, 32, '700', acc);
+      y += 74;
     }
     y = block(ctx, s.title || '', x, y, maxW, hTitle, 104, 54, 1.04, '700', ink, 'title') + 34;
-    if (s.text) block(ctx, s.text, x, y, maxW, 200, 46, 34, 1.36, '400', mute, 'text');
-    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, W - P.r - 96, bot - 96, 96, acc, 2.2);
+    if (s.text) block(ctx, s.text, x, y, maxW, 200, 46, 40, 1.36, '400', mute, 'text');
+    drawIcon(ctx, s, W - P.r - 96, bot - 96, 96, acc, 2.2);
 
   } else if (s.kind === 'number'){
     y = top + avail * .12;
     if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .3, 64, 40, 1.1, '700', ink, 'title') + 30;
     const numTxt = String(s.num || '');
-    let size = sc1(numTxt.length > 6 ? 132 : numTxt.length > 4 ? 156 : 180);
+    const on = offOf(s, 'num');
+    let size = sc1(numTxt.length > 6 ? 132 : numTxt.length > 4 ? 156 : 180, on.sc);
     ctx.__w = '700'; font(ctx, '700', size);
     while (ctx.measureText(numTxt).width > maxW && size > 60){ size -= 6; font(ctx, '700', size); }
-    ctx.fillStyle = acc; ctx.fillText(numTxt, x, y + size * .84);
-    if (ZONES) ZONES.push({f:'num', x:x, y:y, w:Math.max(120, ctx.measureText(numTxt).width),
-                           h:size, size:size, lh:1, weight:'700'});
+    ctx.fillStyle = acc; ctx.fillText(numTxt, x + on.dx, y + on.dy + size * .84);
+    if (ZONES) ZONES.push({f:'num', x:x + on.dx, y:y + on.dy, w:Math.max(120, ctx.measureText(numTxt).width),
+                           h:size, size:size, lh:1, weight:'700', fixed:true});
     y += size * .96;
     if (s.unit){
-      const us = sc1(44);
+      const ou = offOf(s, 'unit'), us = sc1(44, ou.sc);
       font(ctx, '700', us); ctx.fillStyle = ink;
-      ctx.fillText(s.unit, x, y + us * 34 / 44);
-      if (ZONES) ZONES.push({f:'unit', x:x, y:y, w:Math.max(90, ctx.measureText(s.unit).width),
-                             h:us, size:us, lh:1, weight:'700'});
+      ctx.fillText(s.unit, x + ou.dx, y + ou.dy + us * 34 / 44);
+      if (ZONES) ZONES.push({f:'unit', x:x + ou.dx, y:y + ou.dy, w:Math.max(90, ctx.measureText(s.unit).width),
+                             h:us, size:us, lh:1, weight:'700', fixed:true});
       y += us * 74 / 44;
     }
-    if (s.text) block(ctx, s.text, x, y + 12, maxW, avail * .3, 38, 30, 1.38, '400', mute, 'text');
-    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, W - P.r - 110, top + 10, 110, acc, 2);
+    if (s.text) block(ctx, s.text, x, y + 12, maxW, avail * .3, 42, 40, 1.38, '400', mute, 'text');
+    drawIcon(ctx, s, W - P.r - 110, top + 10, 110, acc, 2);
 
   } else if (s.kind === 'list' || s.kind === 'cta'){
     const items = (s.items || []).filter(t => String(t).trim());
@@ -1092,7 +1265,10 @@ function drawCard(cv, i, opts){
        иначе два пункта на слайде висят в противоположных углах и связь между ними теряется. */
     const gap = 34, room = bot - y;
     ctx.__w = '400';
-    const boxes = items.map(t => fit(ctx, t, maxW - 92, room, sc1(40), scMin(30), 1.34, '400'));
+    const boxes = items.map((t, k) => {
+      const o = offOf(s, 'items:' + k);
+      return fit(ctx, t, Math.max(200, maxW - 92 + o.dw), room, sc1(40, o.sc), scMin(30, o.sc), 1.34, '400');
+    });
     let need = 0;
     boxes.forEach(o => need += Math.max(64, o.lines.length * o.size * o.lh) + gap);
     y += Math.max(0, (room - (need - gap)) * .28);
@@ -1107,15 +1283,16 @@ function drawCard(cv, i, opts){
         ctx.fillText(String(k + 1), x + 28, cy + 39); ctx.textAlign = 'left';
       }
       ctx.__w = '400';
-      drawLines(ctx, o, x + 92, cy - 4, ink);
-      if (ZONES) ZONES.push({f:'items', idx:k, x:x + 92, y:cy - 4, w:maxW - 92,
+      const oi = offOf(s, 'items:' + k);
+      drawLines(ctx, o, x + 92 + oi.dx, cy - 4 + oi.dy, ink);
+      if (ZONES) ZONES.push({f:'items:' + k, x:x + 92 + oi.dx, y:cy - 4 + oi.dy,
+                             w:Math.max(200, maxW - 92 + oi.dw),
                              h:Math.max(64, o.lines.length * o.size * o.lh),
                              size:o.size, lh:o.lh, weight:'400'});
       y += Math.max(64, o.lines.length * o.size * o.lh) + gap;
     });
     if (s.kind === 'cta'){
-      font(ctx, '700', 40); ctx.fillStyle = acc;
-      ctx.fillText(S.brand.handle || '', x, bot - 6);
+      label('brand.handle', S.brand.handle, x, bot - 6, 40, '700', acc);
     }
 
   } else if (s.kind === 'quote'){
@@ -1125,10 +1302,8 @@ function drawCard(cv, i, opts){
     ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(x + 44, y + 44, 44, 0, 7); ctx.fill();
     ctx.fillStyle = onPhoto ? '#121212' : '#fff'; font(ctx, '700', 38); ctx.textAlign = 'center';
     ctx.fillText((s.title || '·').trim().charAt(0).toUpperCase(), x + 44, y + 57); ctx.textAlign = 'left';
-    font(ctx, '700', 36); ctx.fillStyle = ink; ctx.fillText(s.title || '', x + 112, y + 36);
-    if (ZONES) ZONES.push({f:'title', x:x + 112, y:y + 6, w:maxW - 112, h:40, size:36, lh:1, weight:'700'});
-    font(ctx, '400', 30); ctx.fillStyle = mute; ctx.fillText(s.unit || '', x + 112, y + 76);
-    if (ZONES) ZONES.push({f:'unit', x:x + 112, y:y + 50, w:maxW - 112, h:34, size:30, lh:1, weight:'400'});
+    label('title', s.title, x + 112, y + 36, 36, '700', ink);
+    label('unit', s.unit, x + 112, y + 76, 30, '400', mute);
 
   } else if (s.kind === 'photo'){
     if (!onPhoto){
@@ -1138,30 +1313,37 @@ function drawCard(cv, i, opts){
       y = top + avail * .5 + 40;
     } else y = top + avail * .45;
     if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .3, 64, 40, 1.1, '700', ink, 'title') + 26;
-    if (s.text) block(ctx, s.text, x, y, maxW, bot - y, 42, 32, 1.36, '400', onPhoto ? '#fff' : mute, 'text');
+    if (s.text) block(ctx, s.text, x, y, maxW, bot - y, 44, 40, 1.36, '400', onPhoto ? '#fff' : mute, 'text');
 
   } else { /* text */
     const t = s.text || '';
     y = top + avail * .1;
     if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .28, 64, 40, 1.1, '700', ink, 'title') + 30;
-    block(ctx, t, x, y, maxW, bot - y, 48, 32, 1.4, '400', ink, 'text');
-    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, x, bot - 92, 92, acc, 2.2);
+    block(ctx, t, x, y, maxW, bot - y, 48, 40, 1.4, '400', ink, 'text');
+    drawIcon(ctx, s, x, bot - 92, 92, acc, 2.2);
   }
 
   /* safe-zone: красным то, что срежет сетка профиля 3:4, синим — центральные 80% */
-  s._zones = ZONES || [];
-  BSC = 1; ZONES = null;
+  /* Зоны пишем только при экранной отрисовке: экспорт идёт с clean:true и ZONES=null,
+     а если записать их и оттуда, карточка после скачивания PNG перестанет отвечать на клики. */
+  if (!opts.clean) s._zones = ZONES || [];
+  ZONES = null; CURSL = null;
 
-  /* рамка выделенного объекта: только на экране, в файл не попадает */
+  /* Рамка выделенного объекта с ручками по восьми точкам — только на экране, в файл не идёт.
+     У надписей фиксированной длины ручек нет: тянуть у них нечего, они двигаются и масштабируются. */
   if (!opts.clean && S.sel && S.sel.i === i){
     const z = (s._zones || []).find(q => zKey(q) === S.sel.f);
     if (z){
       ctx.save();
-      ctx.strokeStyle = th.accent; ctx.lineWidth = 3; ctx.setLineDash([12, 8]);
-      ctx.strokeRect(z.x - 12, z.y - 12, z.w + 24, z.h + 24);
-      ctx.setLineDash([]); ctx.fillStyle = th.accent;
-      const hx = z.x + z.w + 12, hy = z.y + z.h / 2;      /* ручка ширины справа */
-      roundRect(ctx, hx - 9, hy - 30, 18, 60, 9); ctx.fill();
+      ctx.strokeStyle = th.accent; ctx.lineWidth = 3;
+      ctx.setLineDash(z.fixed ? [10, 7] : []);
+      ctx.strokeRect(z.x, z.y, z.w, z.h);
+      ctx.setLineDash([]);
+      handlesOf(z).forEach(h => {
+        ctx.fillStyle = '#fff'; ctx.strokeStyle = th.accent; ctx.lineWidth = 3;
+        roundRect(ctx, h.x - HND / 2, h.y - HND / 2, HND, HND, 5);
+        ctx.fill(); ctx.stroke();
+      });
       ctx.restore();
     }
   }
@@ -1239,8 +1421,11 @@ function renderCards(){
     bar.innerHTML = '<span class="num">' + (i + 1) + '</span><span>' + KINDS[s.kind] + '</span>' +
       '<span class="what"></span><span style="flex:1"></span>' +
       '<button data-act="photo" title="поставить фото в эту карточку">' + UI.photo + '</button>' +
+      '<button data-act="pmode" title="что двигаем: картинку внутри рамки или саму рамку">' + UI.frame + '</button>' +
+      '<button data-act="fit" title="как картинка ложится в рамку">' + UI.crop + '</button>' +
       '<button data-act="minus" title="мельче">' + UI.minus + '</button>' +
       '<button data-act="plus" title="крупнее">' + UI.plus + '</button>' +
+      '<button data-act="del" title="удалить выбранное (Delete)">' + UI.del + '</button>' +
       '<button data-act="reset" title="вернуть на место">' + UI.reset + '</button>' +
       '<button data-act="png" class="prim" title="скачать эту карточку">' + UI.down + ' PNG</button>';
     d.appendChild(bar);
@@ -1252,17 +1437,26 @@ function renderCards(){
       const act = bt.dataset.act, sl = S.slides[i];
       if (act === 'png'){ downloadOne(i); return; }
       if (act === 'photo'){ pickPhotoFor(i); return; }
-      const onText = S.sel && S.sel.i === i;
+      if (act === 'del'){ deleteSelected(); return; }
+      if (act === 'pmode'){ S.pmode = S.pmode === 'pic' ? 'frame' : 'pic'; paintBar(d, i); save(); return; }
+      if (act === 'fit'){
+        const f = F(), fr = picFrameEdit(sl, f.w, f.h);
+        fr.fit = fr.fit === 'contain' ? 'cover' : 'contain';
+        drawCard(cv, i); paintBar(d, i); save(); return;
+      }
+      const sel = S.sel && S.sel.i === i ? S.sel.f : null;
+      const onPic = sel === 'photo' || (!sel && sl.img != null);
       if (act === 'reset'){
-        if (onText) sl.off = null; else sl.crop = {x:0, y:0, z:1};
+        if (sel && !onPic){ if (sl.off) delete sl.off[sel]; }
+        else { sl.crop = {x:0, y:0, z:1}; sl.frame = null; }
       } else {
         const k = act === 'plus' ? 1.08 : 1 / 1.08;
-        if (onText){
-          sl.off = Object.assign({dx:0, dy:0, dw:0, sc:1}, sl.off || {});
-          sl.off.sc = clamp(+(sl.off.sc * k).toFixed(3), 0.6, 2.2);
+        if (sel && !onPic){
+          const o = offEdit(sl, sel);
+          o.sc = clamp(+(o.sc * k).toFixed(3), 0.4, 3);
         } else if (sl.img != null){
           sl.crop = sl.crop || {x:0, y:0, z:1};
-          sl.crop.z = clamp(+(sl.crop.z * k).toFixed(3), 0.3, 6);
+          sl.crop.z = clamp(+(sl.crop.z * k).toFixed(3), 0.2, 8);
         }
       }
       drawCard(cv, i); paintBar(d, i); save();
@@ -1272,16 +1466,36 @@ function renderCards(){
   renderFeed();
 }
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-/* Подпись в панели карточки говорит, чем сейчас управляют кнопки: текстом или фотографией. */
+/* Подпись в панели говорит, что именно выбрано и чем управляют кнопки. Кнопки, которые
+   к выбранному объекту не относятся, из панели убираются: лишние кнопки — лишние вопросы. */
 function paintBar(boxEl, i){
   const w = boxEl.querySelector('.what'); if (!w) return;
-  const sl = S.slides[i], onText = S.sel && S.sel.i === i;
-  const o = sl.off || {};
-  w.textContent = onText
-    ? 'текст ' + Math.round((o.sc || 1) * 100) + '%'
-    : (sl.img != null ? 'фото ' + Math.round(((sl.crop && sl.crop.z) || 1) * 100) + '%'
-                      : 'ткните в текст, чтобы взять его');
-  boxEl.classList.toggle('sel', !!onText);
+  const sl = S.slides[i], sel = (S.sel && S.sel.i === i) ? S.sel.f : null;
+  const hasPic = sl.img != null;
+  const onPic = sel === 'photo';
+  const o = sel && !onPic ? offOf(sl, sel) : null;
+  w.textContent = sel
+    ? (onPic ? 'фото ' + Math.round(((sl.crop && sl.crop.z) || 1) * 100) + '%'
+             : zTitle(sel) + ' ' + Math.round(o.sc * 100) + '%')
+    : (hasPic ? 'фото есть — ткните в него или в текст' : 'ткните в надпись, чтобы взять её');
+  const show = (act, on) => {
+    const bt = boxEl.querySelector('[data-act="' + act + '"]');
+    if (bt) bt.style.display = on ? '' : 'none';
+  };
+  show('pmode', hasPic);
+  show('fit', hasPic);
+  show('del', !!sel);
+  const pm = boxEl.querySelector('[data-act="pmode"]');
+  if (pm) pm.title = S.pmode === 'pic' ? 'сейчас двигаем картинку внутри рамки'
+                                       : 'сейчас двигаем саму рамку';
+  if (pm) pm.classList.toggle('on', S.pmode === 'frame');
+  const ft = boxEl.querySelector('[data-act="fit"]');
+  if (ft){
+    const f = F(), fr = picFrame(sl, f.w, f.h);
+    ft.innerHTML = (fr.fit === 'contain' ? UI.fitin : UI.crop) +
+                   '<span class="lbl">' + (fr.fit === 'contain' ? 'contain' : 'crop') + '</span>';
+  }
+  boxEl.classList.toggle('sel', !!sel);
 }
 function renderFeed(){
   const box = $('feed'); box.innerHTML = '';
@@ -1298,49 +1512,119 @@ function renderFeed(){
     box.appendChild(cv);
   });
 }
-/* Один слой взаимодействия на карточку. Попали в зону текста — берём текст, иначе фотографию:
-   отдельного переключателя режимов не нужно. Тянуть — двигать, колесо — масштаб,
-   двойной щелчок — правка прямо на карточке. */
+/* Ручки рамки: восемь точек, как в макетном редакторе. У надписей фиксированной длины
+   (рубрика, счётчик, цифра, иконка, логотип) тянуть нечего — они двигаются и масштабируются,
+   поэтому ручек им не даём. */
+const HND = 26;
+function handlesOf(z){
+  if (!z || z.fixed) return [];
+  /* Ручку, лежащую ровно на границе кадра, мышью не поймать: половина её за пределами
+     холста. Поэтому позиции поджимаем внутрь — на смещение при перетаскивании это не влияет. */
+  const f = F(), m = HND * 0.62;
+  const cx = v => Math.min(Math.max(v, m), f.w - m), cy = v => Math.min(Math.max(v, m), f.h - m);
+  const {x, y, w, h} = z;
+  return [{k:'nw', x:cx(x), y:cy(y)}, {k:'n', x:cx(x + w / 2), y:cy(y)}, {k:'ne', x:cx(x + w), y:cy(y)},
+          {k:'w', x:cx(x), y:cy(y + h / 2)}, {k:'e', x:cx(x + w), y:cy(y + h / 2)},
+          {k:'sw', x:cx(x), y:cy(y + h)}, {k:'s', x:cx(x + w / 2), y:cy(y + h)},
+          {k:'se', x:cx(x + w), y:cy(y + h)}];
+}
+const HAS_X = {nw:1, w:1, sw:1}, HAS_Y = {nw:1, n:1, ne:1};
+const HAS_W = {nw:1, ne:1, w:1, e:1, sw:1, se:1}, HAS_H = {nw:1, n:1, ne:1, sw:1, s:1, se:1};
+
+/* Один слой взаимодействия на карточку. Порядок попадания — сверху вниз по слоям: сначала
+   ручки выделенного объекта, потом надписи, потом фотография, в самом низу фон. */
 function attachStage(boxEl, cv, i){
   const at = e => {
     const r = cv.getBoundingClientRect(), k = F().w / r.width;
     return {x:(e.clientX - r.left) * k, y:(e.clientY - r.top) * k};
   };
-  const hit = p => (S.slides[i]._zones || []).find(z =>
-    p.x >= z.x - 14 && p.x <= z.x + z.w + 22 && p.y >= z.y - 14 && p.y <= z.y + z.h + 14);
+  const zones = () => S.slides[i]._zones || [];
+  const selZone = () => (S.sel && S.sel.i === i) ? zones().find(z => zKey(z) === S.sel.f) : null;
+  const hitHandle = p => {
+    const z = selZone(); if (!z) return null;
+    const r = HND * 1.1;
+    return handlesOf(z).find(h => Math.abs(p.x - h.x) < r && Math.abs(p.y - h.y) < r) || null;
+  };
+  /* с конца: последние нарисованные лежат выше */
+  const hit = p => {
+    const zs = zones();
+    for (let k = zs.length - 1; k >= 0; k--){
+      const z = zs[k];
+      const pad = z.fixed ? 10 : 6;
+      if (p.x >= z.x - pad && p.x <= z.x + z.w + pad && p.y >= z.y - pad && p.y <= z.y + z.h + pad) return z;
+    }
+    return null;
+  };
   let drag = null;
 
   cv.addEventListener('pointerdown', e => {
     if (e.button) return;
-    const sl = S.slides[i], p = at(e), z = hit(p);
-    if (z){
-      S.sel = {i:i, f:zKey(z)};
-      sl.off = Object.assign({dx:0, dy:0, dw:0, sc:1}, sl.off || {});
-      const onHandle = Math.abs(p.x - (z.x + z.w + 12)) < 26;
-      drag = {kind:onHandle ? 'width' : 'text', sx:p.x, sy:p.y, o:Object.assign({}, sl.off)};
-    } else if (sl.img != null){
-      S.sel = null;
-      sl.crop = sl.crop || {x:0, y:0, z:1};
-      drag = {kind:'photo', sx:p.x, sy:p.y, c:{x:sl.crop.x, y:sl.crop.y}};
+    closeEditor();
+    const sl = S.slides[i], p = at(e), f = F();
+    const h = hitHandle(p);
+    if (h){
+      const z = selZone();
+      drag = {kind:'resize', h:h.k, z:z};
+      if (z.pic){
+        const fr = picFrameEdit(sl, f.w, f.h);
+        drag.base = {x:fr.x, y:fr.y, w:fr.w, h:fr.h};
+      } else {
+        drag.base = Object.assign({}, offEdit(sl, z.f));
+      }
     } else {
-      S.sel = null;
+      const z = hit(p);
+      if (z){
+        S.sel = {i:i, f:zKey(z)};
+        if (z.pic && S.pmode === 'pic'){
+          sl.crop = sl.crop || {x:0, y:0, z:1};
+          drag = {kind:'pan', sx:p.x, sy:p.y, c:{x:sl.crop.x, y:sl.crop.y}};
+        } else if (z.pic){
+          const fr = picFrameEdit(sl, f.w, f.h);
+          drag = {kind:'frame', sx:p.x, sy:p.y, base:{x:fr.x, y:fr.y}};
+        } else if (zKey(z) === 'pattern' || zKey(z) === 'rule'){
+          drag = null;                 /* фон и линейку можно выбрать и удалить, но тащить нечего */
+        } else {
+          drag = {kind:'move', sx:p.x, sy:p.y, f:zKey(z), base:Object.assign({}, offEdit(sl, zKey(z)))};
+        }
+      } else {
+        S.sel = null;
+      }
     }
-    if (drag){ boxEl.classList.add('dragging'); cv.setPointerCapture(e.pointerId); }
+    if (drag){ drag.sx = drag.sx == null ? p.x : drag.sx; drag.sy = drag.sy == null ? p.y : drag.sy;
+               boxEl.classList.add('dragging'); cv.setPointerCapture(e.pointerId); }
     drawCard(cv, i); paintBar(boxEl, i);
   });
 
   cv.addEventListener('pointermove', e => {
     if (!drag) return;
-    const sl = S.slides[i], p = at(e), f = F(), Pd = padOf();
+    const sl = S.slides[i], p = at(e), f = F();
     const dx = p.x - drag.sx, dy = p.y - drag.sy;
-    if (drag.kind === 'text'){
-      /* блок не уезжает за кадр: слева до 8 px от края, справа оставляем 240 px текста */
-      sl.off.dx = clamp(drag.o.dx + dx, 8 - Pd.l, f.w - Pd.l - 240);
-      sl.off.dy = clamp(drag.o.dy + dy, 8 - Pd.t - 90, f.h - Pd.t - 90 - 200);
-    } else if (drag.kind === 'width'){
-      sl.off.dw = clamp(drag.o.dw + dx, 240 - (f.w - Pd.l - Pd.r), Pd.l + Pd.r - 16);
-    } else {
+    if (drag.kind === 'move'){
+      const o = offEdit(sl, drag.f);
+      o.dx = drag.base.dx + dx; o.dy = drag.base.dy + dy;
+    } else if (drag.kind === 'pan'){
       sl.crop.x = drag.c.x + dx; sl.crop.y = drag.c.y + dy;
+    } else if (drag.kind === 'frame'){
+      const fr = sl.frame;
+      fr.x = drag.base.x + dx; fr.y = drag.base.y + dy;
+    } else if (drag.kind === 'resize'){
+      const k = drag.h;
+      if (drag.z.pic){
+        const fr = sl.frame, bb = drag.base;
+        if (HAS_X[k]){ fr.x = bb.x + dx; fr.w = Math.max(80, bb.w - dx); }
+        else if (HAS_W[k]) fr.w = Math.max(80, bb.w + dx);
+        if (HAS_Y[k]){ fr.y = bb.y + dy; fr.h = Math.max(80, bb.h - dy); }
+        else if (HAS_H[k]) fr.h = Math.max(80, bb.h + dy);
+      } else {
+        const o = offEdit(sl, drag.z.f), bb = drag.base;
+        if (HAS_X[k]){ o.dx = bb.dx + dx; o.dw = bb.dw - dx; }
+        else if (HAS_W[k]) o.dw = bb.dw + dx;
+        if (HAS_Y[k]){ o.dy = bb.dy + dy; o.dh = bb.dh - dy; }
+        else if (HAS_H[k]) o.dh = bb.dh + dy;
+        /* рамка не должна вырождаться: ниже этих значений тянуть бессмысленно */
+        o.dw = Math.max(200 - (f.w - padOf().l - padOf().r), o.dw);
+        o.dh = Math.max(-1e5, o.dh);
+      }
     }
     drawCard(cv, i); paintBar(boxEl, i);
   });
@@ -1351,22 +1635,22 @@ function attachStage(boxEl, cv, i){
 
   cv.addEventListener('wheel', e => {
     const sl = S.slides[i], p = at(e), z = hit(p);
-    if (z){
-      e.preventDefault();
-      S.sel = {i:i, f:zKey(z)};
-      sl.off = Object.assign({dx:0, dy:0, dw:0, sc:1}, sl.off || {});
-      sl.off.sc = clamp(+(sl.off.sc * (e.deltaY < 0 ? 1.05 : 1 / 1.05)).toFixed(3), 0.6, 2.2);
-    } else if (sl.img != null){
-      e.preventDefault();
+    if (!z) return;
+    e.preventDefault();
+    S.sel = {i:i, f:zKey(z)};
+    if (z.pic){
       sl.crop = sl.crop || {x:0, y:0, z:1};
-      sl.crop.z = clamp(+(sl.crop.z * (e.deltaY < 0 ? 1.06 : .94)).toFixed(3), 0.3, 6);
-    } else return;
+      sl.crop.z = clamp(+(sl.crop.z * (e.deltaY < 0 ? 1.06 : .94)).toFixed(3), 0.2, 8);
+    } else {
+      const o = offEdit(sl, zKey(z));
+      o.sc = clamp(+(o.sc * (e.deltaY < 0 ? 1.05 : 1 / 1.05)).toFixed(3), 0.4, 3);
+    }
     drawCard(cv, i); paintBar(boxEl, i); save();
   }, {passive:false});
 
   cv.addEventListener('dblclick', e => {
     const z = hit(at(e));
-    if (z) editZone(boxEl, cv, i, z);
+    if (z && fieldOps(S.slides[i], z.f).get) editZone(boxEl, cv, i, z);
   });
 
   /* файл, брошенный на карточку, принадлежит ей одной */
@@ -1381,14 +1665,39 @@ function attachStage(boxEl, cv, i){
   });
 }
 
+/* Удаление объекта: у надписи вычищается текст, у технической — она уходит в S.hide
+   и возвращается кнопкой в панели, у иконки и фотографии снимается привязка. */
+function deleteSelected(){
+  if (!S.sel || EDITOR) return false;
+  const sl = S.slides[S.sel.i]; if (!sl) return false;
+  const ops = fieldOps(sl, S.sel.f);
+  if (!ops.del) return false;
+  ops.del();
+  S.sel = null;
+  renderEds(); renderCards(); paintHidden(); save();
+  return true;
+}
+addEventListener('keydown', e => {
+  if (EDITOR) return;
+  const t = e.target, tag = t && t.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (e.key === 'Delete' || e.key === 'Backspace'){
+    if (deleteSelected()) e.preventDefault();
+  }
+  if (e.key === 'Escape' && S.sel){ S.sel = null; renderCards(); }
+});
+
 /* Правка прямо на карточке: поверх зоны встаёт textarea, совпадающая по позиции, кеглю
    и начертанию. Пока она открыта, карточка перерисовывается точечно — полная перерисовка
    списка убила бы и саму textarea, и фокус в ней. */
 let EDITOR = null;
-function closeEditor(){ if (EDITOR){ const e = EDITOR; EDITOR = null; e.remove(); } }
+function closeEditor(){
+  if (EDITOR){ const e = EDITOR; EDITOR = null; if (e.tb) e.tb.remove(); e.remove(); }
+}
 function editZone(boxEl, cv, i, z){
   closeEditor();
   const sl = S.slides[i], k = cv.getBoundingClientRect().width / F().w;
+  if (!fieldOps(sl, z.f).get) return;
   const ta = document.createElement('textarea');
   ta.className = 'oncard';
   ta.value = zoneValue(sl, z);
@@ -1399,11 +1708,45 @@ function editZone(boxEl, cv, i, z){
   ta.style.fontSize = Math.max(11, z.size * k) + 'px';
   ta.style.lineHeight = z.lh;
   ta.style.fontWeight = z.weight;
+  /* Начертание и кегль правятся здесь же: пользователю не нужно искать их в панели слева.
+     Ж — жирный, К — курсив, A− / A+ — кегль (пол 40 px по типографике проекта). */
+  const tb = document.createElement('div');
+  tb.className = 'ontb';
+  tb.style.left = (z.x * k) + 'px';
+  tb.style.top = Math.max(0, z.y * k - 44) + 'px';
+  tb.innerHTML = '<button data-s="b" title="жирный"><b>Ж</b></button>' +
+                 '<button data-s="i" title="курсив"><i>К</i></button>' +
+                 '<button data-s="-" title="мельче">A−</button>' +
+                 '<span class="pt"></span>' +
+                 '<button data-s="+" title="крупнее">A+</button>';
+  boxEl.appendChild(tb);
   boxEl.appendChild(ta);
-  EDITOR = ta;
+  EDITOR = ta; EDITOR.tb = tb;
   ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
 
-  const push = () => { zoneSet(sl, z, ta.value); syncEd(i, z); drawCard(cv, i); };
+  const paintTb = () => {
+    const o = offOf(sl, z.f);
+    const zz = (S.slides[i]._zones || []).find(q => q.f === z.f) || z;
+    tb.querySelector('[data-s="b"]').classList.toggle('on', o.b === true ||
+      (o.b == null && String(zz.weight) === '700'));
+    tb.querySelector('[data-s="i"]').classList.toggle('on', !!o.i);
+    tb.querySelector('.pt').textContent = Math.round(zz.size) + ' px';
+    ta.style.fontWeight = (o.b == null ? zz.weight : (o.b ? '700' : '400'));
+    ta.style.fontStyle = o.i ? 'italic' : 'normal';
+    ta.style.fontSize = Math.max(11, zz.size * k) + 'px';
+  };
+  tb.querySelectorAll('[data-s]').forEach(bt => bt.onmousedown = ev => {
+    ev.preventDefault();                        /* не отдаём фокус: поле остаётся открытым */
+    const o = offEdit(sl, z.f), a = bt.dataset.s;
+    if (a === 'b') o.b = o.b == null ? (String(z.weight) !== '700') : !o.b;
+    if (a === 'i') o.i = !o.i;
+    if (a === '-') o.sc = clamp(+(o.sc / 1.08).toFixed(3), 0.4, 3);
+    if (a === '+') o.sc = clamp(+(o.sc * 1.08).toFixed(3), 0.4, 3);
+    drawCard(cv, i); paintTb(); paintBar(boxEl, i); save();
+  });
+  paintTb();
+
+  const push = () => { zoneSet(sl, z, ta.value); syncEd(i, z); drawCard(cv, i); paintTb(); };
   ta.addEventListener('input', push);
   ta.addEventListener('keydown', ev => {
     ev.stopPropagation();
@@ -1415,11 +1758,13 @@ function editZone(boxEl, cv, i, z){
 /* Обратная связь с блоком слева: подменяем значение конкретного поля, а не пересобираем
    редактор — иначе на каждом символе терялся бы фокус. */
 function syncEd(i, z){
+  if (z.f.indexOf('brand.') === 0){ syncBrandInputs(); return; }
   const ed = $('eds').children[i]; if (!ed) return;
-  const el = ed.querySelector('[data-f="' + z.f + '"]');
+  const key = /^items:/.test(z.f) ? 'items' : z.f;
+  const el = ed.querySelector('[data-f="' + key + '"]');
   if (!el) return;
   const sl = S.slides[i];
-  const v = z.f === 'items' ? (sl.items || []).join('\n') : String(sl[z.f] || '');
+  const v = key === 'items' ? (sl.items || []).join('\n') : String(sl[key] || '');
   if (el.value !== v) el.value = v;
 }
 
@@ -1679,6 +2024,7 @@ function save(){
   try{
     localStorage.setItem('postinsta', JSON.stringify({
       proj:S.proj, fmt:S.fmt, theme:S.theme, pad:S.pad, zoom:S.zoom, demo:S.demo,
+      hide:S.hide, pmode:S.pmode,
       brand:S.brand, raw:$('raw').value,
       slides:S.slides.map(s => Object.assign({}, s, {img:null, _zones:null}))  /* картинки и зоны не сериализуем */
     }));
@@ -1693,9 +2039,14 @@ function load(){
     S.pad = +d.pad || S.pad;
     S.zoom = ZOOMS[d.zoom] ? d.zoom : S.zoom;
     S.demo = !!d.demo;
+    S.hide = (d.hide && typeof d.hide === 'object') ? d.hide : {};
+    S.pmode = d.pmode === 'frame' ? 'frame' : 'pic';
     S.theme = (d.theme && THEMES[d.theme]) ? d.theme : S.theme;
     Object.assign(S.brand, d.brand || {});
     S.slides = d.slides || [];
+    /* до появления объектов рамка была одна на слайд ({dx,dy,dw,sc}); такие сбрасываем,
+       иначе смещение уехало бы в поле с именем «dx» */
+    S.slides.forEach(sl => { if (sl.off && typeof sl.off.dx === 'number') sl.off = null; });
     $('raw').value = d.raw || '';
     return !!S.slides.length;
   }catch(e){ return false; }
@@ -1763,6 +2114,17 @@ $('bAdd').onclick = () => { S.slides.push({kind:'text', title:'', text:'', icon:
   renderEds(); renderCards(); save(); };
 /* Подпись под ползунком объясняет, почему поле может оказаться больше выбранного:
    сетка профиля и интерфейс сторис имеют право на свой минимум. */
+/* Что удалено с карточек и как вернуть. Технические надписи общие для всех слайдов,
+   поэтому и список один. */
+function paintHidden(){
+  const box = $('hiddenBox'); if (!box) return;
+  const keys = Object.keys(S.hide).filter(k => S.hide[k]);
+  if (!keys.length){ box.innerHTML = ''; box.style.display = 'none'; return; }
+  box.style.display = '';
+  box.innerHTML = 'убрано с карточек: <b>' + keys.map(zTitle).join(', ') +
+                  '</b> — <button class="lnk" id="unhide">вернуть всё</button>';
+  $('unhide').onclick = () => { S.hide = {}; paintHidden(); renderCards(); save(); };
+}
 function padHint(){
   const P = padOf(), g = gridCrop(S.fmt), sf = SAFE[S.fmt];
   $('padVal').textContent = S.pad;
@@ -1826,6 +2188,7 @@ function loadDemo(){
   seg($('segFmt'), FORMATS, 'fmt', () => { padHint(); renderCards(); });
   seg($('segZoom'), ZOOMS, 'zoom', () => { renderCards(); });
   paintIcons();
+  paintHidden();
   const had = load();
   $('fPad').value = S.pad;
   applyProject(S.proj, false);
