@@ -318,14 +318,18 @@ textarea.ta{min-height:58px; background:var(--ui-field); border:1px solid var(--
 
 /* ---------- превью ---------- */
 #cards{display:flex; flex-wrap:wrap; gap:22px; align-items:flex-start}
-.cardbox{position:relative}
+/* Ширину блока задаёт карточка, а не панель под ней: на 390 px панель из четырёх кнопок
+   раздувала блок до 462 px и карточка уезжала за левый край. */
+.cardbox{position:relative; max-width:100%; min-width:0}
 .cardbox canvas{
-  display:block; border-radius:6px; background:#fff; box-shadow:0 10px 30px rgba(18,18,18,.16); cursor:grab;
+  display:block; border-radius:6px; background:#fff; box-shadow:0 10px 30px rgba(18,18,18,.16);
+  cursor:grab; max-width:100%; height:auto;
 }
 .cardbox.dragging canvas{cursor:grabbing}
 .cardbox .bar{
   display:flex; align-items:center; gap:8px; margin-top:10px; font-size:14px; color:var(--ui-mute);
   background:var(--ui-panel); border:1px solid var(--ui-line); border-radius:14px; padding:8px 10px;
+  flex-wrap:wrap; width:100%;
 }
 .cardbox .bar .num{
   width:26px; height:26px; border-radius:9px; background:var(--ui-acc); color:#fff; font-weight:700;
@@ -344,6 +348,7 @@ textarea.ta{min-height:58px; background:var(--ui-field); border:1px solid var(--
 svg.i{width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:2;
       stroke-linecap:round; stroke-linejoin:round; flex:0 0 auto}
 .cardbox.sel canvas{box-shadow:0 0 0 2px var(--ui-acc), 0 14px 34px rgba(18,18,18,.18)}
+.cardbox.dropping canvas{box-shadow:0 0 0 4px var(--ui-acc), 0 14px 34px rgba(18,18,18,.22)}
 
 /* правка прямо на карточке: поле встаёт ровно на зону текста */
 textarea.oncard{
@@ -419,7 +424,7 @@ body.picking #pick{display:grid}
   <button class="btn ghost" id="bSafe" title="показать зоны, которые обрезает или закрывает Instagram">safe-zone</button>
   <button class="btn ghost" id="bFeed" title="как карточки будут выглядеть в сетке профиля">лента</button>
   <span class="sp"></span>
-  <button class="btn" id="bAddPhoto">фото</button>
+  <button class="btn" id="bAddPhoto" title="положить фото в общий список — потом выбрать любому слайду">фото в список</button>
   <button class="btn" id="bAll" title="каждая карточка отдельным файлом PNG">скачать всё</button>
   <button class="btn ghost" id="bZip" title="то же одним архивом, плюс файл с подписью">zip</button>
 </header>
@@ -746,7 +751,11 @@ function buildSlides(raw, want){
   if (!lines.length) return [];
   /* заголовок: первая строка, если она короткая (так журналист и пишет), иначе первое предложение */
   let head = lines[0], rest = lines.slice(1).join(' ');
-  if (head.length > 140){ const ss = sentences(head); head = ss[0]; rest = ss.slice(1).join(' ') + ' ' + rest; }
+  /* Заголовком берём первую строку, но только если она и есть одно предложение. Короткий абзац
+     из нескольких предложений («Импорт вырос. Ввезли 118 тыс. тонн. Цена выросла.») раньше
+     целиком уезжал в заголовок, и карточек получалось две вместо пяти. */
+  const hs = sentences(head);
+  if (head.length > 140 || hs.length > 1){ head = hs[0]; rest = hs.slice(1).join(' ') + ' ' + rest; }
   const ss = sentences(rest);
 
   const lead = ss[0] || '';
@@ -958,12 +967,15 @@ function drawCard(cv, i, opts){
   const W = f.w, H = f.h;
   cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
-  /* обложке фон-фотография тоже разрешена: на ней держится заставка Turmush */
-  const onPhoto = (s.kind === 'photo' || s.kind === 'cover') && s.img != null && S.images[s.img];
+  /* Фотография — фон любого слайда, а не только слайда «фото»: кнопка у карточки ставит
+     её туда, куда пользователь ткнул, и он вправе ждать, что она будет видна. */
+  const onPhoto = s.img != null && S.images[s.img];
   const zastavka = PJ().cover === 'band' && s.kind === 'cover';
   const ink = onPhoto ? '#fff' : th.ink;
   const mute = onPhoto ? 'rgba(255,255,255,.85)' : th.mute;
   const line = onPhoto ? 'rgba(255,255,255,.32)' : th.line;
+  /* поверх фотографии фирменный цвет уходит в темноту — акценты становятся белыми */
+  const acc = onPhoto ? '#fff' : th.accent;
 
   /* фон */
   ctx.fillStyle = th.bg; ctx.fillRect(0, 0, W, H);
@@ -1016,7 +1028,7 @@ function drawCard(cv, i, opts){
       .forEach((l, k) => ctx.fillText(l, P.l, footY + 4 + k * 34));
     ctx.textAlign = 'right';
     if (i < n - 1){
-      font(ctx, '700', 30); ctx.fillStyle = th.accent;
+      font(ctx, '700', 30); ctx.fillStyle = acc;
       ctx.fillText(b.swipe || '', W - P.r, footY + 4);
     } else {
       font(ctx, '700', 30); ctx.fillStyle = ink;
@@ -1043,12 +1055,12 @@ function drawCard(cv, i, opts){
     const hTitle = Math.min(avail * .62, avail - (s.text ? 200 : 0));
     y = top + Math.max(0, (avail - (hTitle + (s.text ? 170 : 0))) * .38);
     if (hasDate){
-      font(ctx, '700', 32); ctx.fillStyle = th.accent;
+      font(ctx, '700', 32); ctx.fillStyle = acc;
       ctx.fillText(b.date.toUpperCase().split('').join(' '), x, y + 26); y += 74;
     }
     y = block(ctx, s.title || '', x, y, maxW, hTitle, 104, 54, 1.04, '700', ink, 'title') + 34;
     if (s.text) block(ctx, s.text, x, y, maxW, 200, 46, 34, 1.36, '400', mute, 'text');
-    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, W - P.r - 96, bot - 96, 96, th.accent, 2.2);
+    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, W - P.r - 96, bot - 96, 96, acc, 2.2);
 
   } else if (s.kind === 'number'){
     y = top + avail * .12;
@@ -1057,7 +1069,7 @@ function drawCard(cv, i, opts){
     let size = sc1(numTxt.length > 6 ? 132 : numTxt.length > 4 ? 156 : 180);
     ctx.__w = '700'; font(ctx, '700', size);
     while (ctx.measureText(numTxt).width > maxW && size > 60){ size -= 6; font(ctx, '700', size); }
-    ctx.fillStyle = th.accent; ctx.fillText(numTxt, x, y + size * .84);
+    ctx.fillStyle = acc; ctx.fillText(numTxt, x, y + size * .84);
     if (ZONES) ZONES.push({f:'num', x:x, y:y, w:Math.max(120, ctx.measureText(numTxt).width),
                            h:size, size:size, lh:1, weight:'700'});
     y += size * .96;
@@ -1070,7 +1082,7 @@ function drawCard(cv, i, opts){
       y += us * 74 / 44;
     }
     if (s.text) block(ctx, s.text, x, y + 12, maxW, avail * .3, 38, 30, 1.38, '400', mute, 'text');
-    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, W - P.r - 110, top + 10, 110, th.accent, 2);
+    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, W - P.r - 110, top + 10, 110, acc, 2);
 
   } else if (s.kind === 'list' || s.kind === 'cta'){
     const items = (s.items || []).filter(t => String(t).trim());
@@ -1088,10 +1100,10 @@ function drawCard(cv, i, opts){
       const cy = y, o = boxes[k];
       if (s.kind === 'cta'){
         ctx.fillStyle = th.shade; roundRect(ctx, x, cy, 64, 64, 20); ctx.fill();
-        icon(ctx, k === 0 ? 'save' : 'send', x + 13, cy + 13, 38, th.accent, 2.2);
+        icon(ctx, k === 0 ? 'save' : 'send', x + 13, cy + 13, 38, acc, 2.2);
       } else {
-        ctx.fillStyle = th.accent; ctx.beginPath(); ctx.arc(x + 28, cy + 28, 28, 0, 7); ctx.fill();
-        ctx.fillStyle = '#fff'; font(ctx, '700', 30); ctx.textAlign = 'center';
+        ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(x + 28, cy + 28, 28, 0, 7); ctx.fill();
+        ctx.fillStyle = onPhoto ? '#121212' : '#fff'; font(ctx, '700', 30); ctx.textAlign = 'center';
         ctx.fillText(String(k + 1), x + 28, cy + 39); ctx.textAlign = 'left';
       }
       ctx.__w = '400';
@@ -1102,7 +1114,7 @@ function drawCard(cv, i, opts){
       y += Math.max(64, o.lines.length * o.size * o.lh) + gap;
     });
     if (s.kind === 'cta'){
-      font(ctx, '700', 40); ctx.fillStyle = th.accent;
+      font(ctx, '700', 40); ctx.fillStyle = acc;
       ctx.fillText(S.brand.handle || '', x, bot - 6);
     }
 
@@ -1110,8 +1122,8 @@ function drawCard(cv, i, opts){
     y = top + avail * .12;
     const q = '«' + (s.text || '') + '»';
     y = block(ctx, q, x, y, maxW, avail * .58, 58, 38, 1.26, '700', ink, 'text') + 46;
-    ctx.fillStyle = th.accent; ctx.beginPath(); ctx.arc(x + 44, y + 44, 44, 0, 7); ctx.fill();
-    ctx.fillStyle = '#fff'; font(ctx, '700', 38); ctx.textAlign = 'center';
+    ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(x + 44, y + 44, 44, 0, 7); ctx.fill();
+    ctx.fillStyle = onPhoto ? '#121212' : '#fff'; font(ctx, '700', 38); ctx.textAlign = 'center';
     ctx.fillText((s.title || '·').trim().charAt(0).toUpperCase(), x + 44, y + 57); ctx.textAlign = 'left';
     font(ctx, '700', 36); ctx.fillStyle = ink; ctx.fillText(s.title || '', x + 112, y + 36);
     if (ZONES) ZONES.push({f:'title', x:x + 112, y:y + 6, w:maxW - 112, h:40, size:36, lh:1, weight:'700'});
@@ -1133,7 +1145,7 @@ function drawCard(cv, i, opts){
     y = top + avail * .1;
     if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .28, 64, 40, 1.1, '700', ink, 'title') + 30;
     block(ctx, t, x, y, maxW, bot - y, 48, 32, 1.4, '400', ink, 'text');
-    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, x, bot - 92, 92, th.accent, 2.2);
+    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, x, bot - 92, 92, acc, 2.2);
   }
 
   /* safe-zone: красным то, что срежет сетка профиля 3:4, синим — центральные 80% */
@@ -1226,6 +1238,7 @@ function renderCards(){
     const bar = document.createElement('div'); bar.className = 'bar';
     bar.innerHTML = '<span class="num">' + (i + 1) + '</span><span>' + KINDS[s.kind] + '</span>' +
       '<span class="what"></span><span style="flex:1"></span>' +
+      '<button data-act="photo" title="поставить фото в эту карточку">' + UI.photo + '</button>' +
       '<button data-act="minus" title="мельче">' + UI.minus + '</button>' +
       '<button data-act="plus" title="крупнее">' + UI.plus + '</button>' +
       '<button data-act="reset" title="вернуть на место">' + UI.reset + '</button>' +
@@ -1238,6 +1251,7 @@ function renderCards(){
     bar.querySelectorAll('[data-act]').forEach(bt => bt.onclick = () => {
       const act = bt.dataset.act, sl = S.slides[i];
       if (act === 'png'){ downloadOne(i); return; }
+      if (act === 'photo'){ pickPhotoFor(i); return; }
       const onText = S.sel && S.sel.i === i;
       if (act === 'reset'){
         if (onText) sl.off = null; else sl.crop = {x:0, y:0, z:1};
@@ -1354,6 +1368,17 @@ function attachStage(boxEl, cv, i){
     const z = hit(at(e));
     if (z) editZone(boxEl, cv, i, z);
   });
+
+  /* файл, брошенный на карточку, принадлежит ей одной */
+  cv.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation();
+    boxEl.classList.add('dropping'); });
+  cv.addEventListener('dragleave', () => boxEl.classList.remove('dropping'));
+  cv.addEventListener('drop', e => {
+    e.preventDefault(); e.stopPropagation();
+    boxEl.classList.remove('dropping');
+    $('drop').classList.remove('on');
+    if (e.dataTransfer && e.dataTransfer.files.length) addFiles(e.dataTransfer.files, i);
+  });
 }
 
 /* Правка прямо на карточке: поверх зоны встаёт textarea, совпадающая по позиции, кеглю
@@ -1442,9 +1467,8 @@ function renderEds(){
       el.oninput = () => {
         const f = el.dataset.f;
         if (f === 'kind'){ s.kind = el.value; renderEds(); }
-        else if (f === 'img'){ s.img = el.value === '' ? null : +el.value; s.crop = {x:0, y:0, z:1};
-                               /* обложка остаётся обложкой: фото ей нужно как фон заставки */
-                               if (s.kind !== 'photo' && s.kind !== 'cover') { s.kind = 'photo'; renderEds(); } }
+        else if (f === 'img'){ s.img = el.value === '' ? null : +el.value; s.crop = {x:0, y:0, z:1}; }
+                               /* тип слайда не подменяем: фотография теперь фон любого типа */
         else if (f === 'items') s.items = el.value.split('\n');
         else s[f] = el.value;
         renderCards(); save();
@@ -1591,15 +1615,31 @@ function makeCaption(){
 /* ============================================================================
    9. ФОТО
    ============================================================================ */
-function addFiles(list){
-  [...list].filter(f => /^image\//.test(f.type)).forEach(f => {
+/* target — номер слайда, которому фото принадлежит. Без target фото просто ложится в общий
+   список и его можно выбрать любому слайду; с target оно сразу встаёт в эту карточку и
+   больше никуда: у каждого слайда свой s.img. */
+function addFiles(list, target){
+  const files = [...list].filter(f => /^image\//.test(f.type));
+  files.forEach((f, k) => {
     const im = new Image();
     im.onload = () => {
       S.images.push({img:im, name:f.name.slice(0, 22)});
-      renderImgs(); renderEds(); renderCards();
+      if (target != null && k === 0 && S.slides[target]){
+        S.slides[target].img = S.images.length - 1;
+        S.slides[target].crop = {x:0, y:0, z:1};
+      }
+      renderImgs(); renderEds(); renderCards(); save();
     };
     im.src = URL.createObjectURL(f);
   });
+}
+/* Выбор файла для одной карточки: свой input на каждый вызов, чтобы повторный выбор
+   того же файла тоже срабатывал. */
+function pickPhotoFor(i){
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = () => addFiles(inp.files, i);
+  inp.click();
 }
 function renderImgs(){
   const box = $('imgs');
@@ -1738,7 +1778,7 @@ $('fPad').addEventListener('input', () => {
 });
 /* Иконки ставим из кода: разметка кнопок остаётся читаемой, а набор иконок — в одном месте. */
 function paintIcons(){
-  $('bAddPhoto').innerHTML = UI.photo + '<span>фото</span>';
+  $('bAddPhoto').innerHTML = UI.photo + '<span>фото в список</span>';
   $('bAll').innerHTML = UI.down + '<span>скачать всё</span>';
   $('bBuild2').innerHTML = UI.build + '<span>собрать карточки из текста</span>';
   $('bAdd').innerHTML = UI.add + '<span>слайд</span>';
