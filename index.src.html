@@ -41,6 +41,7 @@ header h1 b{color:var(--ui-acc2)}
 .btn.acc{background:var(--ui-acc); border-color:#B3382E}
 .btn.acc:hover{background:#B3382E}
 .btn.ghost{background:transparent}
+.btn[disabled]{opacity:.55; cursor:default}
 .btn.on{border-color:var(--ui-acc2); color:#fff; background:#2E1D1B}
 .seg{display:flex; border:1px solid var(--ui-line); border-radius:10px; overflow:hidden}
 .seg button{background:#1E2124; border:0; padding:9px 12px; border-right:1px solid var(--ui-line)}
@@ -140,7 +141,8 @@ body.feedmode #feednote{display:block}
   <button class="btn ghost" id="bFeed" title="как карточки будут выглядеть в сетке профиля">лента профиля</button>
   <span class="sp"></span>
   <button class="btn" id="bAddPhoto">+ фото</button>
-  <button class="btn" id="bZip">скачать всё (zip)</button>
+  <button class="btn" id="bAll" title="каждая карточка отдельным файлом PNG">скачать всё (PNG)</button>
+  <button class="btn ghost" id="bZip" title="то же одним архивом, плюс файл с подписью">zip</button>
   <button class="btn acc" id="bBuild">собрать из текста</button>
 </header>
 
@@ -742,6 +744,27 @@ async function downloadOne(i){
   a.href = URL.createObjectURL(b); a.download = fileName(i); a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
+const pause = ms => new Promise(r => setTimeout(r, ms));
+/* Пачкой, но отдельными PNG: так карточки сразу видны в галерее телефона и в проводнике,
+   распаковывать нечего. Зазор между кликами обязателен — без паузы Chrome глотает
+   часть файлов, а не показывает их как отдельные загрузки. */
+async function downloadAll(){
+  const btn = $('bAll'), label = btn.textContent, n = S.slides.length;
+  if (!n) return;
+  btn.disabled = true;
+  try {
+    for (let i = 0; i < n; i++){
+      btn.textContent = 'сохраняю ' + (i + 1) + '/' + n;
+      await downloadOne(i);
+      if (i < n - 1) await pause(400);
+    }
+    btn.textContent = 'готово: ' + n + ' PNG';
+    await pause(1600);
+  } finally {
+    btn.textContent = label;
+    btn.disabled = false;
+  }
+}
 const CRC = (() => { const t = []; for (let n = 0; n < 256; n++){ let c = n;
   for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
 function crc32(u8){ let c = 0xFFFFFFFF;
@@ -902,6 +925,7 @@ function build(){
 $('bBuild').onclick = build; $('bBuild2').onclick = build;
 $('bAdd').onclick = () => { S.slides.push({kind:'text', title:'', text:'', icon:'none', img:null});
   renderEds(); renderCards(); save(); };
+$('bAll').onclick = downloadAll;
 $('bZip').onclick = downloadZip;
 $('bCap').onclick = makeCaption;
 $('bCapCopy').onclick = () => { $('capOut').select(); document.execCommand('copy'); };
