@@ -40,8 +40,8 @@ header h1{font-size:20px; font-weight:700; letter-spacing:-.01em; white-space:no
 header h1 b{color:var(--ui-acc)}
 .sp{flex:1}
 .btn{
-  background:var(--ui-panel); border:1px solid var(--ui-line); border-radius:10px; padding:9px 14px;
-  white-space:nowrap;
+  background:var(--ui-panel); border:1px solid var(--ui-line); border-radius:12px; padding:0 15px;
+  height:44px; white-space:nowrap; display:inline-flex; align-items:center; gap:8px; font-size:15px;
 }
 .btn:hover{background:var(--ui-hover)}
 .btn.acc{background:var(--ui-acc); border-color:var(--ui-acc); color:#fff}
@@ -49,12 +49,27 @@ header h1 b{color:var(--ui-acc)}
 .btn.ghost{background:transparent}
 .btn[disabled]{opacity:.55; cursor:default}
 .btn.on{border-color:var(--ui-acc); color:var(--ui-acc); background:var(--ui-tint)}
-.seg{display:flex; border:1px solid var(--ui-line); border-radius:10px; overflow:hidden}
-.seg button{background:var(--ui-panel); border:0; padding:9px 12px; border-right:1px solid var(--ui-line)}
+.seg{display:flex; border:1px solid var(--ui-line); border-radius:12px; overflow:hidden}
+.seg button{background:var(--ui-panel); border:0; height:44px; padding:0 14px; font-size:15px;
+            border-right:1px solid var(--ui-line)}
 .seg button:last-child{border-right:0}
 .seg button:hover{background:var(--ui-hover)}
 .seg button.on{background:var(--ui-acc); color:#fff}
 label.fld{display:flex; flex-direction:column; gap:5px; font-size:13px; color:var(--ui-mute)}
+.rowline{display:flex; align-items:baseline; gap:6px}
+.rowline b{color:var(--ui-ink); font-size:15px}
+input[type=range]{
+  -webkit-appearance:none; appearance:none; width:100%; height:26px; background:transparent; padding:0;
+  border:0; margin:0;
+}
+input[type=range]::-webkit-slider-runnable-track{
+  height:6px; border-radius:3px; background:var(--ui-line);
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none; width:22px; height:22px; margin-top:-8px;
+  border-radius:50%; background:var(--ui-acc); border:2px solid #fff;
+  box-shadow:0 2px 6px rgba(18,18,18,.28);
+}
 label.fld input, label.fld select{
   background:var(--ui-field); border:1px solid var(--ui-line); border-radius:8px; padding:8px 10px; min-width:0;
 }
@@ -74,6 +89,16 @@ textarea#raw{
 .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
 h3.sec{font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--ui-mute); font-weight:700;
        margin-top:6px; border-top:1px solid var(--ui-line); padding-top:12px}
+/* Складные разделы: на входе видно только то, что нужно сразу, остальное — по клику. */
+details.sec{border-top:1px solid var(--ui-line); padding-top:10px}
+details.sec > summary{
+  cursor:pointer; font-size:13px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--ui-mute); font-weight:700; list-style:none; display:flex; align-items:center; gap:8px;
+}
+details.sec > summary::-webkit-details-marker{display:none}
+details.sec > summary::after{content:'+'; margin-left:auto; font-size:16px}
+details.sec[open] > summary::after{content:'–'}
+details.sec > div{display:flex; flex-direction:column; gap:10px; padding-top:10px}
 /* label.fld{display:flex} специфичнее одного класса, поэтому прячем с тем же весом */
 label.fld.only-turmush{display:none}
 body.proj-turmush label.fld.only-turmush{display:flex}
@@ -97,6 +122,8 @@ body.proj-turmush label.fld.only-turmush{display:flex}
   line-height:1.4; font-size:14px;
 }
 .slide-ed textarea{resize:vertical; min-height:56px}
+textarea.ta{min-height:58px; background:var(--ui-field); border:1px solid var(--ui-line);
+            border-radius:8px; padding:8px 10px; line-height:1.4; width:100%; resize:vertical}
 .slide-ed .lbl{font-size:12px; color:var(--ui-mute)}
 .chips{display:flex; gap:6px; flex-wrap:wrap}
 .chip{
@@ -115,10 +142,34 @@ body.proj-turmush label.fld.only-turmush{display:flex}
   display:block; border-radius:6px; background:#fff; box-shadow:0 10px 30px rgba(18,18,18,.16); cursor:grab;
 }
 .cardbox.dragging canvas{cursor:grabbing}
-.cardbox .bar{display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:var(--ui-mute)}
-.cardbox .bar button{background:var(--ui-panel); border:1px solid var(--ui-line); border-radius:8px;
-                     padding:5px 9px; font-size:12px}
+.cardbox .bar{
+  display:flex; align-items:center; gap:8px; margin-top:10px; font-size:14px; color:var(--ui-mute);
+  background:var(--ui-panel); border:1px solid var(--ui-line); border-radius:14px; padding:8px 10px;
+}
+.cardbox .bar .num{
+  width:26px; height:26px; border-radius:9px; background:var(--ui-acc); color:#fff; font-weight:700;
+  display:grid; place-items:center; font-size:13px; flex:0 0 auto;
+}
+.cardbox .bar .what{color:var(--ui-ink); font-weight:700; white-space:nowrap; overflow:hidden;
+                    text-overflow:ellipsis; max-width:46%}
+.cardbox .bar button{
+  background:transparent; border:1px solid var(--ui-line); border-radius:11px; min-width:44px;
+  height:40px; padding:0 12px; font-size:14px; display:inline-flex; align-items:center; gap:6px;
+  justify-content:center; color:var(--ui-ink);
+}
 .cardbox .bar button:hover{background:var(--ui-hover)}
+.cardbox .bar button.prim{background:var(--ui-acc); border-color:var(--ui-acc); color:#fff}
+.cardbox .bar button.prim:hover{filter:brightness(1.12)}
+svg.i{width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:2;
+      stroke-linecap:round; stroke-linejoin:round; flex:0 0 auto}
+.cardbox.sel canvas{box-shadow:0 0 0 2px var(--ui-acc), 0 14px 34px rgba(18,18,18,.18)}
+
+/* правка прямо на карточке: поле встаёт ровно на зону текста */
+textarea.oncard{
+  position:absolute; z-index:6; margin:0; padding:2px 6px; resize:none; overflow:hidden;
+  font-family:Arsenal,Georgia,serif; color:#121212; background:rgba(255,255,255,.94);
+  border:2px solid var(--ui-acc); border-radius:8px; box-shadow:0 8px 24px rgba(18,18,18,.18);
+}
 .cardbox .over{
   position:absolute; left:8px; top:8px; background:rgba(179,38,30,.95); color:#fff; font-size:12px;
   padding:4px 8px; border-radius:6px;
@@ -180,21 +231,21 @@ body.picking #pick{display:grid}
 
 <header>
   <h1>post·<b>insta</b> — текст в карточки</h1>
-  <button class="btn ghost" id="bProj" title="сменить проект">проект</button>
+  <button class="btn ghost" id="bProj" title="сменить проект"></button>
   <div class="seg" id="segFmt"></div>
   <div class="seg" id="segTheme"></div>
+  <div class="seg" id="segZoom" title="размер превью"></div>
   <button class="btn ghost" id="bSafe" title="показать зоны, которые обрезает или закрывает Instagram">safe-zone</button>
-  <button class="btn ghost" id="bFeed" title="как карточки будут выглядеть в сетке профиля">лента профиля</button>
+  <button class="btn ghost" id="bFeed" title="как карточки будут выглядеть в сетке профиля">лента</button>
   <span class="sp"></span>
-  <button class="btn" id="bAddPhoto">+ фото</button>
-  <button class="btn" id="bAll" title="каждая карточка отдельным файлом PNG">скачать всё (PNG)</button>
+  <button class="btn" id="bAddPhoto">фото</button>
+  <button class="btn" id="bAll" title="каждая карточка отдельным файлом PNG">скачать всё</button>
   <button class="btn ghost" id="bZip" title="то же одним архивом, плюс файл с подписью">zip</button>
-  <button class="btn acc" id="bBuild">собрать из текста</button>
 </header>
 
 <main>
   <div id="left">
-    <label class="fld">текст новости
+    <label class="fld">исходный текст новости — из него собираются карточки
       <textarea id="raw" placeholder="Вставьте сюда текст новости целиком. Первая строка или первое предложение станет заголовком-хуком, предложения с цифрами — карточками с крупной цифрой, остальное разложится по слайдам."></textarea>
     </label>
     <div class="row">
@@ -210,13 +261,36 @@ body.picking #pick{display:grid}
 
     <h3 class="sec">шапка и подвал</h3>
     <div class="grid2">
-      <label class="fld">метка<input id="fMark" value="T"></label>
       <label class="fld">рубрика<input id="fRubric" value="экономика"></label>
       <label class="fld">аккаунт<input id="fHandle" value="@tazabek"></label>
       <label class="fld">дата / надзаголовок<input id="fDate" value=""></label>
     </div>
     <label class="fld">источник (виден на каждом слайде)<input id="fSource" value="Источник: "></label>
-    <label class="fld only-turmush">строка под заставкой<input id="fFoot" value="АКЫРКЫ ЖАҢЫЛЫКТАР WWW.TURMUSH.KG САЙТЫНДА"></label>
+    <div class="fld">
+      <div class="rowline"><span>поле карточки</span><b id="padVal">88</b><span>px</span></div>
+      <input type="range" id="fPad" min="40" max="200" step="2" value="88">
+      <span class="hint" id="padNote"></span>
+    </div>
+    <details class="sec">
+      <summary>технические надписи</summary>
+      <div>
+        <p class="hint">Эти строки печатаются на каждой карточке. У Turmush они кыргызские:
+          формулировки предложены, поправьте под редакционную норму — правки сохраняются.</p>
+        <label class="fld">подсказка «листайте»<input id="fSwipe" value=""></label>
+        <label class="fld">заголовок финального слайда<input id="fCtaTitle" value=""></label>
+        <label class="fld">пункты финального слайда (по одному в строке)
+          <textarea id="fCtaItems" class="ta"></textarea>
+        </label>
+        <label class="fld">хвост подписи к посту
+          <textarea id="fCapTail" class="ta"></textarea>
+        </label>
+        <label class="fld only-turmush">строка под заставкой<input id="fFoot" value=""></label>
+      </div>
+    </details>
+
+    <p class="hint">На самой карточке: щелчок по тексту берёт его, перетаскивание двигает,
+      колесо меняет кегль, двойной щелчок правит текст на месте. Щелчок по фону берёт
+      фотографию — её так же можно двигать и уменьшать колесом.</p>
 
     <h3 class="sec">слайды</h3>
     <div id="eds" style="display:flex; flex-direction:column; gap:10px"></div>
@@ -269,11 +343,11 @@ const FORMATS = {
    на тёмном фоне фирменный #7952B3 даёт 3,4:1, поэтому там он светлее. */
 const THEMES = {
   tazabek:{proj:'tazabek', t:'светлая', bg:'#F4F5F7', ink:'#121212', mute:'#5A5F66', accent:'#9a2d25', line:'rgba(18,18,18,.14)', chip:'#FFFFFF', shade:'rgba(18,18,18,.07)'},
-  noir:   {proj:'tazabek', t:'тёмная',  bg:'#121212', ink:'#F4F5F7', mute:'#A2A7AE', accent:'#E4564A', line:'rgba(244,245,247,.20)', chip:'#1D1D1D', shade:'rgba(244,245,247,.09)'},
+  noir:   {proj:'tazabek', dark:true, t:'тёмная',  bg:'#121212', ink:'#F4F5F7', mute:'#A2A7AE', accent:'#E4564A', line:'rgba(244,245,247,.20)', chip:'#1D1D1D', shade:'rgba(244,245,247,.09)'},
   paper:  {proj:'tazabek', t:'бумага',  bg:'#F0EEE6', ink:'#141413', mute:'#6B6862', accent:'#C25A34', line:'rgba(20,20,19,.16)', chip:'#FBFAF6', shade:'rgba(20,20,19,.06)'},
   turmush:      {proj:'turmush', t:'светлая', bg:'#FBF8FE', ink:'#1A1226', mute:'#5D5470', accent:'#7952B3', line:'rgba(26,18,38,.14)', chip:'#FFFFFF', shade:'#F1DDFF'},
   turmush_lilac:{proj:'turmush', t:'сирень',  bg:'#F1DDFF', ink:'#1A1226', mute:'#5A4A73', accent:'#5E3D93', line:'rgba(26,18,38,.16)', chip:'#FCF7FF', shade:'rgba(94,61,147,.13)'},
-  turmush_dark: {proj:'turmush', t:'тёмная',  bg:'#171223', ink:'#F4F0FA', mute:'#A79CB8', accent:'#BFA3E8', line:'rgba(244,240,250,.20)', chip:'#221A33', shade:'rgba(241,221,255,.10)'}
+  turmush_dark: {proj:'turmush', dark:true, t:'тёмная',  bg:'#171223', ink:'#F4F0FA', mute:'#A79CB8', accent:'#BFA3E8', line:'rgba(244,240,250,.20)', chip:'#221A33', shade:'rgba(241,221,255,.10)'}
 };
 /* Иконки нарисованы здесь же — ни одной сторонней лицензии.
    Путь в системе координат 24×24, рисуется через Path2D. */
@@ -294,6 +368,24 @@ const ICONS = {
   save:   {d:'M6 3h12v18l-6-4.6L6 21z', t:'сохранить'},
   send:   {d:'M21 3L3 10.5l7 2.5 2.5 7zM21 3l-9 11', t:'отправить'}
 };
+/* Иконки интерфейса — своя геометрия в системе 24×24, как и иконки на карточках.
+   Держим их строками, чтобы вставлять в разметку кнопок без сборщика. */
+const svg = d => '<svg viewBox="0 0 24 24" class="i"><path d="' + d + '"/></svg>';
+const UI = {
+  plus:  svg('M12 5v14M5 12h14'),
+  minus: svg('M5 12h14'),
+  reset: svg('M4 12a8 8 0 1 0 3-6.2M4 4v4h4'),
+  down:  svg('M12 4v11M7 11l5 5 5-5M5 20h14'),
+  photo: svg('M3 6h18v13H3zM3 15l5-5 4 4 3-3 6 6M16 9.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2'),
+  text:  svg('M5 6h14M9 6v13M15 6v13M5 19h14'),
+  build: svg('M4 5h16M4 10h10M4 15h16M4 20h7'),
+  add:   svg('M12 5v14M5 12h14'),
+  zone:  svg('M4 4h16v16H4zM8 8h8v8H8'),
+  grid:  svg('M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z'),
+  proj:  svg('M4 7h7l2 2h7v9H4zM4 7V5h5l2 2'),
+  copy:  svg('M9 9h11v11H9zM4 15V4h11'),
+  wand:  svg('M5 19l9-9M14 5l1 3 3 1-3 1-1 3-1-3-3-1 3-1zM19 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z')
+};
 const KINDS = {
   cover: 'обложка / хук',
   text:  'текст',
@@ -303,7 +395,39 @@ const KINDS = {
   photo: 'фото + текст',
   cta:   'финал / призыв'
 };
-const PAD = 88;
+const PAD = 88;                       /* поле по умолчанию, дальше настраивается */
+
+/* Safe zone. В ленте интерфейс Instagram на картинку НЕ наезжает — там работает только кроп
+   сетки профиля. Наезжает он в сторис и Reels: сверху 108–190, снизу 320–400 (подпись, ник,
+   аудио-кредит), справа 90–120 (кнопки), слева ~60. Берём худший край диапазона.
+   Источники и числа — references/research_smm_2026.md §2. */
+const SAFE = {
+  '4x5':  {top:0, right:0, bottom:0, left:0},
+  '3x4':  {top:0, right:0, bottom:0, left:0},
+  '1x1':  {top:0, right:0, bottom:0, left:0},
+  '9x16': {top:190, right:120, bottom:400, left:60}
+};
+/* Кроп сетки профиля: тайл 3:4 (w/h = 0,75). Кадр шире тайла — срезает бока, уже — верх и низ.
+   Прежняя формула давала отрицательные значения для 4:5 и 1:1 (индикатор не рисовал ничего)
+   и путала ось у 9:16. Точные значения: 4:5 → 33,8 по бокам, 1:1 → 135 по бокам,
+   9:16 → 240 сверху и снизу, 3:4 → без кропа. */
+function gridCrop(fmt){
+  const f = FORMATS[fmt], a = f.w / f.h, at = 0.75;
+  if (a > at) return {x:(f.w - f.h * at) / 2, y:0};
+  if (a < at) return {x:0, y:(f.h - f.w / at) / 2};
+  return {x:0, y:0};
+}
+/* Рабочее поле: поле пользователя, но не меньше того, что срежет сетка, и не меньше зоны
+   интерфейса. Поэтому одного числа «по кругу» не бывает: в 4:5 хватает 42, в 9:16 снизу нужно 400. */
+function padOf(){
+  const g = gridCrop(S.fmt), sf = SAFE[S.fmt], p = S.pad;
+  return {
+    l: Math.max(p, g.x + 8, sf.left),
+    r: Math.max(p, g.x + 8, sf.right),
+    t: Math.max(p, g.y + 8, sf.top),
+    b: Math.max(p, g.y + 8, sf.bottom)
+  };
+}
 
 /* Логотипы вшиты как base64-SVG: и экран выбора проекта, и заставка рисуют один
    и тот же файл. Перекраска — подменой fill прямо в исходнике, копий логотипа
@@ -338,7 +462,13 @@ const PROJECTS = {
     about:'Стиль делового портала: фирменный красный #9a2d25, светлая, тёмная и бумажная темы.',
     dots:['#9a2d25', '#F4F5F7', '#121212'],
     themes:['tazabek', 'noir', 'paper'],
-    brand:{mark:'T', rubric:'экономика', handle:'@tazabek', date:'', source:'Источник: ', foot:''}
+    lang:'ru',
+    demo:{title:'Вставьте заголовок новости',
+          text:'Первая строка текста станет заголовком, предложения с цифрами — карточками с крупной цифрой.'},
+    brand:{mark:'T', rubric:'экономика', handle:'@tazabek', date:'', source:'Источник: ', foot:'',
+           swipe:'листайте  →', ctaTitle:'Полный материал — на tazabek.kg',
+           ctaItems:'Сохраните, чтобы вернуться к цифрам\nОтправьте тому, кому это по работе',
+           capTail:'Полный материал — по ссылке в профиле. Сохраните пост, если цифры пригодятся в работе.'}
   },
   turmush:{
     t:'Turmush', logo:'turmush', cover:'band', site:'turmush.kg', tag:'#turmush',
@@ -346,8 +476,16 @@ const PROJECTS = {
     dots:['#7952B3', '#F1DDFF', '#121212'],
     themes:['turmush', 'turmush_lilac', 'turmush_dark'],
     band:'#110B1A', soft:'#F1DDFF', softInk:'#5E3D93',
-    brand:{mark:'T', rubric:'экономика', handle:'@turmush.akipress', date:'', source:'Источник: ',
-           foot:'АКЫРКЫ ЖАҢЫЛЫКТАР WWW.TURMUSH.KG САЙТЫНДА'}
+    lang:'ky',
+    demo:{title:'Жаңылыктын башын коюңуз',
+          text:'Биринчи сүйлөм баш сөз болот, сандар бар сүйлөмдөр — өзүнчө карточка.'},
+    /* Turmush — кыргыз тилиндеги басылма, поэтому у него по умолчанию кыргызские надписи.
+       Все они правятся в разделе «технические надписи»: формулировки предложены, а не утверждены. */
+    brand:{mark:'T', rubric:'экономика', handle:'@turmush.akipress', date:'', source:'Булагы: ',
+           foot:'АКЫРКЫ ЖАҢЫЛЫКТАР WWW.TURMUSH.KG САЙТЫНДА',
+           swipe:'сүрүңүз  →', ctaTitle:'Толук материал — turmush.kg сайтында',
+           ctaItems:'Сактап коюңуз, сандар керек болот\nКесиптешиңизге жөнөтүңүз',
+           capTail:'Толук материал — профилдеги шилтемеде. Сандар керек болсо, постту сактап коюңуз.'}
   }
 };
 
@@ -355,8 +493,12 @@ const PROJECTS = {
    2. СОСТОЯНИЕ
    ============================================================================ */
 const S = {
-  proj:'tazabek', fmt:'4x5', theme:'tazabek', safe:false, feed:false,
-  brand:{mark:'T', rubric:'экономика', handle:'@tazabek', date:'', source:'Источник: ', foot:''},
+  proj:'tazabek', fmt:'4x5', theme:'tazabek', safe:false, feed:false, pad:PAD, zoom:'m', sel:null,
+  demo:true,
+  brand:{mark:'T', rubric:'экономика', handle:'@tazabek', date:'', source:'Источник: ', foot:'',
+         swipe:'листайте  →', ctaTitle:'Полный материал — на tazabek.kg',
+         ctaItems:'Сохраните, чтобы вернуться к цифрам\nОтправьте тому, кому это по работе',
+         capTail:'Полный материал — по ссылке в профиле. Сохраните пост, если цифры пригодятся в работе.'},
   slides:[], images:[]          /* images: {img, name} ; slide.crop {x,y,z} */
 };
 const $ = id => document.getElementById(id);
@@ -456,8 +598,8 @@ function buildSlides(raw, want){
     if (out.length < Math.max(3, want) - 1)
       out.push({kind:'text', title:'', text:shorten(s, 260), icon:'none', img:null});
   });
-  out.push({kind:'cta', title:'Полный материал — на ' + PJ().site,
-            items:['Сохраните, чтобы вернуться к цифрам', 'Отправьте тому, кому это по работе'],
+  out.push({kind:'cta', title:S.brand.ctaTitle || '',
+            items:String(S.brand.ctaItems || '').split('\n').filter(t => t.trim()),
             icon:'save', img:null});
   return out.slice(0, Math.max(3, want));
 }
@@ -493,10 +635,27 @@ function drawLines(ctx, o, x, y, color){
   o.lines.forEach((l, i) => ctx.fillText(l, x, y + o.size * .82 + i * o.size * o.lh));
   return y + o.lines.length * o.size * o.lh;
 }
-function block(ctx, text, x, y, maxW, maxH, start, min, lh, weight, color){
+/* BSC — множитель кегля текстового блока (пользователь тянет колесом), ZONES — приёмник
+   зон текста для попадания мышью. При BSC === 1 кегли остаются ровно теми же числами,
+   что и до появления масштабирования: раскладка по умолчанию не смещается ни на пиксель. */
+let BSC = 1, ZONES = null;
+const sc1 = v => BSC === 1 ? v : Math.round(v * BSC);
+const scMin = v => BSC === 1 ? v : Math.max(28, Math.round(v * BSC));
+function block(ctx, text, x, y, maxW, maxH, start, min, lh, weight, color, field){
   ctx.__w = weight;
-  const o = fit(ctx, text, maxW, maxH, start, min, lh, weight);
-  return drawLines(ctx, o, x, y, color);
+  const o = fit(ctx, text, maxW, maxH, sc1(start), scMin(min), lh, weight);
+  const y2 = drawLines(ctx, o, x, y, color);
+  if (ZONES && field) ZONES.push({f:field, x:x, y:y, w:maxW, h:Math.max(o.size, y2 - y),
+                                  size:o.size, lh:lh, weight:weight});
+  return y2;
+}
+const zKey = z => z.f + (z.idx == null ? '' : ':' + z.idx);
+function zoneValue(sl, z){
+  return z.f === 'items' ? String((sl.items || [])[z.idx] || '') : String(sl[z.f] || '');
+}
+function zoneSet(sl, z, v){
+  if (z.f === 'items'){ sl.items = (sl.items || []).slice(); sl.items[z.idx] = v; }
+  else sl[z.f] = v;
 }
 function icon(ctx, name, x, y, size, color, width){
   const ic = ICONS[name];
@@ -525,7 +684,8 @@ function cover(ctx, im, x, y, w, h, crop){
    углу, тёмная полоса с заголовком снизу, узкая строка сайта под ней.
    От образца отличается набором (Arsenal), градиентами вместо резких линеек
    и тем, что заголовок сам подбирает кегль под высоту своей полосы. */
-function turmushCover(ctx, s, W, H, th, b, onPhoto){
+function turmushCover(ctx, s, W, H, th, b, onPhoto, O){
+  O = O || {dx:0, dy:0, dw:0, sc:1};
   const p = PROJECTS.turmush, k = H / 1350, R = v => Math.round(v * k);
   const strip = R(92), bandH = R(210);
   /* в сторис нижние 400 px отданы интерфейсу Instagram: полосу и строку сайта
@@ -544,8 +704,11 @@ function turmushCover(ctx, s, W, H, th, b, onPhoto){
     /* без фотографии затемнять нечего — градиент по светлому фону выглядел бы грязью.
        Свободную середину занимает лид, иначе карточка читается как незагрузившийся кадр. */
     ctx.__w = '400';
-    const lead = fit(ctx, s.text, W - pad * 2, bandY - R(300), R(46), R(32), 1.34, '400');
-    drawLines(ctx, lead, pad, R(200), th.ink);
+    const lead = fit(ctx, s.text, W - pad * 2 + O.dw, bandY - R(300), R(46), R(32), 1.34, '400');
+    drawLines(ctx, lead, pad + O.dx, R(200) + O.dy, th.ink);
+    if (ZONES) ZONES.push({f:'text', x:pad + O.dx, y:R(200) + O.dy, w:W - pad * 2 + O.dw,
+                           h:Math.max(lead.size, lead.lines.length * lead.size * lead.lh),
+                           size:lead.size, lh:1.34, weight:'400'});
   }
 
   /* полоса заголовка: слева плотная, справа приоткрывает фотографию */
@@ -563,6 +726,9 @@ function turmushCover(ctx, s, W, H, th, b, onPhoto){
   ctx.__w = '700';
   const o = fit(ctx, (s.title || '').toUpperCase(), W - pad * 2 - R(40), bandH - R(88), R(66), R(38), 1.08, '700');
   drawLines(ctx, o, pad, bandY + R(24), '#fff');
+  if (ZONES) ZONES.push({f:'title', x:pad, y:bandY + R(24), w:W - pad * 2 - R(40),
+                         h:Math.max(o.size, o.lines.length * o.size * o.lh),
+                         size:o.size, lh:1.08, weight:'700'});
 
   /* источник обязателен на каждом слайде, заставка не исключение */
   font(ctx, '400', R(26)); ctx.fillStyle = 'rgba(255,255,255,.82)';
@@ -639,40 +805,57 @@ function drawCard(cv, i, opts){
 
   /* шапка и подвал: на заставке их заменяют плашка, полоса и строка сайта */
   const b = S.brand;
-  const footY = H - PAD - 40;
+  const P = padOf();
+  const footY = H - P.b - 40;
   if (!zastavka){
-    font(ctx, '700', 34); const mw = ctx.measureText(b.mark).width;
-    ctx.fillStyle = th.accent; roundRect(ctx, PAD, PAD - 6, mw + 36, 56, 28); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.fillText(b.mark, PAD + 18, PAD + 32);
+    /* логотип проекта, а не буква: поверх фото и на тёмной теме белым, на светлой акцентом —
+       фирменный цвет на тёмном фоне тонет */
+    const lg = logoImage(PJ().logo, (th.dark || onPhoto) ? '#ffffff' : th.accent);
+    let after = P.l;
+    if (lg.complete && lg.naturalWidth){
+      const lh = 44, lw = lh * LOGO_RATIO[PJ().logo];
+      ctx.drawImage(lg, P.l, P.t - 2, lw, lh);
+      after = P.l + lw + 30;
+    } else {                       /* страховка на случай, если картинка не успела загрузиться */
+      font(ctx, '700', 34); const mw = ctx.measureText(b.mark || 'T').width;
+      ctx.fillStyle = th.accent; roundRect(ctx, P.l, P.t - 6, mw + 36, 56, 28); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(b.mark || 'T', P.l + 18, P.t + 32);
+      after = P.l + mw + 60;
+    }
     font(ctx, '700', 30);
     ctx.fillStyle = mute;
     const rub = (b.rubric || '').toUpperCase().split('').join(' ');
-    ctx.fillText(rub, PAD + mw + 60, PAD + 30);
-    ctx.textAlign = 'right'; ctx.fillText((i + 1) + '/' + n, W - PAD, PAD + 30); ctx.textAlign = 'left';
+    ctx.fillText(rub, after, P.t + 30);
+    ctx.textAlign = 'right'; ctx.fillText((i + 1) + '/' + n, W - P.r, P.t + 30); ctx.textAlign = 'left';
 
     ctx.strokeStyle = line; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(PAD, footY - 26); ctx.lineTo(W - PAD, footY - 26); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(P.l, footY - 26); ctx.lineTo(W - P.r, footY - 26); ctx.stroke();
     ctx.__w = '400'; font(ctx, '400', 28); ctx.fillStyle = mute;
-    wrap(ctx, b.source || '', W - PAD * 2 - 300).slice(0, 2)
-      .forEach((l, k) => ctx.fillText(l, PAD, footY + 4 + k * 34));
+    wrap(ctx, b.source || '', W - P.l - P.r - 300).slice(0, 2)
+      .forEach((l, k) => ctx.fillText(l, P.l, footY + 4 + k * 34));
     ctx.textAlign = 'right';
     if (i < n - 1){
       font(ctx, '700', 30); ctx.fillStyle = th.accent;
-      ctx.fillText('листайте  →', W - PAD, footY + 4);
+      ctx.fillText(b.swipe || '', W - P.r, footY + 4);
     } else {
       font(ctx, '700', 30); ctx.fillStyle = ink;
-      ctx.fillText(b.handle || '', W - PAD, footY + 4);
+      ctx.fillText(b.handle || '', W - P.r, footY + 4);
     }
     ctx.textAlign = 'left';
   }
 
   /* тело */
-  const x = PAD, maxW = W - PAD * 2;
-  const top = PAD + 90, bot = footY - 70, avail = bot - top;
+  /* off — то, что пользователь натянул мышью: смещение блока, изменение ширины, масштаб кегля.
+     Пустое off = прежняя раскладка. */
+  const O = Object.assign({dx:0, dy:0, dw:0, sc:1}, s.off || {});
+  BSC = O.sc;
+  ZONES = opts.clean ? null : [];
+  const x = P.l + O.dx, maxW = Math.max(240, W - P.l - P.r + O.dw);
+  const top = P.t + 90 + O.dy, bot = footY - 70, avail = Math.max(240, footY - 70 - top);
   let y = top;
 
   if (zastavka){
-    turmushCover(ctx, s, W, H, th, b, !!onPhoto);
+    turmushCover(ctx, s, W, H, th, b, !!onPhoto, O);
 
   } else if (s.kind === 'cover'){
     const hasDate = !!(b.date || '').trim();
@@ -682,32 +865,41 @@ function drawCard(cv, i, opts){
       font(ctx, '700', 32); ctx.fillStyle = th.accent;
       ctx.fillText(b.date.toUpperCase().split('').join(' '), x, y + 26); y += 74;
     }
-    y = block(ctx, s.title || '', x, y, maxW, hTitle, 104, 54, 1.04, '700', ink) + 34;
-    if (s.text) block(ctx, s.text, x, y, maxW, 200, 46, 34, 1.36, '400', mute);
-    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, W - PAD - 96, bot - 96, 96, th.accent, 2.2);
+    y = block(ctx, s.title || '', x, y, maxW, hTitle, 104, 54, 1.04, '700', ink, 'title') + 34;
+    if (s.text) block(ctx, s.text, x, y, maxW, 200, 46, 34, 1.36, '400', mute, 'text');
+    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, W - P.r - 96, bot - 96, 96, th.accent, 2.2);
 
   } else if (s.kind === 'number'){
     y = top + avail * .12;
-    if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .3, 64, 40, 1.1, '700', ink) + 30;
+    if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .3, 64, 40, 1.1, '700', ink, 'title') + 30;
     const numTxt = String(s.num || '');
-    let size = numTxt.length > 6 ? 132 : numTxt.length > 4 ? 156 : 180;
+    let size = sc1(numTxt.length > 6 ? 132 : numTxt.length > 4 ? 156 : 180);
     ctx.__w = '700'; font(ctx, '700', size);
     while (ctx.measureText(numTxt).width > maxW && size > 60){ size -= 6; font(ctx, '700', size); }
     ctx.fillStyle = th.accent; ctx.fillText(numTxt, x, y + size * .84);
+    if (ZONES) ZONES.push({f:'num', x:x, y:y, w:Math.max(120, ctx.measureText(numTxt).width),
+                           h:size, size:size, lh:1, weight:'700'});
     y += size * .96;
-    if (s.unit){ font(ctx, '700', 44); ctx.fillStyle = ink; ctx.fillText(s.unit, x, y + 34); y += 74; }
-    if (s.text) block(ctx, s.text, x, y + 12, maxW, avail * .3, 38, 30, 1.38, '400', mute);
-    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, W - PAD - 110, top + 10, 110, th.accent, 2);
+    if (s.unit){
+      const us = sc1(44);
+      font(ctx, '700', us); ctx.fillStyle = ink;
+      ctx.fillText(s.unit, x, y + us * 34 / 44);
+      if (ZONES) ZONES.push({f:'unit', x:x, y:y, w:Math.max(90, ctx.measureText(s.unit).width),
+                             h:us, size:us, lh:1, weight:'700'});
+      y += us * 74 / 44;
+    }
+    if (s.text) block(ctx, s.text, x, y + 12, maxW, avail * .3, 38, 30, 1.38, '400', mute, 'text');
+    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, W - P.r - 110, top + 10, 110, th.accent, 2);
 
   } else if (s.kind === 'list' || s.kind === 'cta'){
     const items = (s.items || []).filter(t => String(t).trim());
     y = top + avail * .1;
-    if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .34, s.kind === 'cta' ? 64 : 64, 40, 1.1, '700', ink) + 40;
+    if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .34, 64, 40, 1.1, '700', ink, 'title') + 40;
     /* Пункты складываются встык с одним отбивкой, а не растягиваются по всей высоте:
        иначе два пункта на слайде висят в противоположных углах и связь между ними теряется. */
     const gap = 34, room = bot - y;
     ctx.__w = '400';
-    const boxes = items.map(t => fit(ctx, t, maxW - 92, room, 40, 30, 1.34, '400'));
+    const boxes = items.map(t => fit(ctx, t, maxW - 92, room, sc1(40), scMin(30), 1.34, '400'));
     let need = 0;
     boxes.forEach(o => need += Math.max(64, o.lines.length * o.size * o.lh) + gap);
     y += Math.max(0, (room - (need - gap)) * .28);
@@ -723,6 +915,9 @@ function drawCard(cv, i, opts){
       }
       ctx.__w = '400';
       drawLines(ctx, o, x + 92, cy - 4, ink);
+      if (ZONES) ZONES.push({f:'items', idx:k, x:x + 92, y:cy - 4, w:maxW - 92,
+                             h:Math.max(64, o.lines.length * o.size * o.lh),
+                             size:o.size, lh:o.lh, weight:'400'});
       y += Math.max(64, o.lines.length * o.size * o.lh) + gap;
     });
     if (s.kind === 'cta'){
@@ -733,12 +928,14 @@ function drawCard(cv, i, opts){
   } else if (s.kind === 'quote'){
     y = top + avail * .12;
     const q = '«' + (s.text || '') + '»';
-    y = block(ctx, q, x, y, maxW, avail * .58, 58, 38, 1.26, '700', ink) + 46;
+    y = block(ctx, q, x, y, maxW, avail * .58, 58, 38, 1.26, '700', ink, 'text') + 46;
     ctx.fillStyle = th.accent; ctx.beginPath(); ctx.arc(x + 44, y + 44, 44, 0, 7); ctx.fill();
     ctx.fillStyle = '#fff'; font(ctx, '700', 38); ctx.textAlign = 'center';
     ctx.fillText((s.title || '·').trim().charAt(0).toUpperCase(), x + 44, y + 57); ctx.textAlign = 'left';
     font(ctx, '700', 36); ctx.fillStyle = ink; ctx.fillText(s.title || '', x + 112, y + 36);
+    if (ZONES) ZONES.push({f:'title', x:x + 112, y:y + 6, w:maxW - 112, h:40, size:36, lh:1, weight:'700'});
     font(ctx, '400', 30); ctx.fillStyle = mute; ctx.fillText(s.unit || '', x + 112, y + 76);
+    if (ZONES) ZONES.push({f:'unit', x:x + 112, y:y + 50, w:maxW - 112, h:34, size:30, lh:1, weight:'400'});
 
   } else if (s.kind === 'photo'){
     if (!onPhoto){
@@ -747,38 +944,79 @@ function drawCard(cv, i, opts){
       ctx.fillText('добавьте фото в редакторе слайда', x + 34, top + avail * .25);
       y = top + avail * .5 + 40;
     } else y = top + avail * .45;
-    if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .3, 64, 40, 1.1, '700', ink) + 26;
-    if (s.text) block(ctx, s.text, x, y, maxW, bot - y, 42, 32, 1.36, '400', onPhoto ? '#fff' : mute);
+    if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .3, 64, 40, 1.1, '700', ink, 'title') + 26;
+    if (s.text) block(ctx, s.text, x, y, maxW, bot - y, 42, 32, 1.36, '400', onPhoto ? '#fff' : mute, 'text');
 
   } else { /* text */
     const t = s.text || '';
     y = top + avail * .1;
-    if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .28, 64, 40, 1.1, '700', ink) + 30;
-    block(ctx, t, x, y, maxW, bot - y, 48, 32, 1.4, '400', ink);
+    if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .28, 64, 40, 1.1, '700', ink, 'title') + 30;
+    block(ctx, t, x, y, maxW, bot - y, 48, 32, 1.4, '400', ink, 'text');
     if (s.icon && s.icon !== 'none') icon(ctx, s.icon, x, bot - 92, 92, th.accent, 2.2);
   }
 
   /* safe-zone: красным то, что срежет сетка профиля 3:4, синим — центральные 80% */
-  if (S.safe && !opts.clean){
-    const cropW = W * (1 - (W / H) / (3 / 4)) / 2;   /* сколько уйдёт по бокам при кропе в 3:4 */
-    ctx.save(); ctx.setLineDash([16, 12]); ctx.lineWidth = 3;
-    if (cropW > 1){
-      ctx.strokeStyle = 'rgba(233,64,64,.95)'; ctx.fillStyle = 'rgba(233,64,64,.16)';
-      ctx.fillRect(0, 0, cropW, H); ctx.fillRect(W - cropW, 0, cropW, H);
-      ctx.strokeRect(cropW, 0, W - cropW * 2, H);
-    } else {
-      const cropH = (H - W * 4 / 3) / 2;
-      if (cropH > 1){
-        ctx.strokeStyle = 'rgba(233,64,64,.95)'; ctx.fillStyle = 'rgba(233,64,64,.16)';
-        ctx.fillRect(0, 0, W, cropH); ctx.fillRect(0, H - cropH, W, cropH);
-      }
+  s._zones = ZONES || [];
+  BSC = 1; ZONES = null;
+
+  /* рамка выделенного объекта: только на экране, в файл не попадает */
+  if (!opts.clean && S.sel && S.sel.i === i){
+    const z = (s._zones || []).find(q => zKey(q) === S.sel.f);
+    if (z){
+      ctx.save();
+      ctx.strokeStyle = th.accent; ctx.lineWidth = 3; ctx.setLineDash([12, 8]);
+      ctx.strokeRect(z.x - 12, z.y - 12, z.w + 24, z.h + 24);
+      ctx.setLineDash([]); ctx.fillStyle = th.accent;
+      const hx = z.x + z.w + 12, hy = z.y + z.h / 2;      /* ручка ширины справа */
+      roundRect(ctx, hx - 9, hy - 30, 18, 60, 9); ctx.fill();
+      ctx.restore();
     }
+  }
+
+  if (S.safe && !opts.clean){
+    ctx.save();
+    const g = gridCrop(S.fmt), sf = SAFE[S.fmt];
+    ctx.lineWidth = 3; ctx.font = '700 26px Arsenal, Georgia, serif'; ctx.textAlign = 'left';
+
+    /* красным — что срежет сетка профиля 3:4 */
+    ctx.setLineDash([16, 12]);
+    if (g.x > 1){
+      ctx.fillStyle = 'rgba(233,64,64,.18)'; ctx.strokeStyle = 'rgba(233,64,64,.95)';
+      ctx.fillRect(0, 0, g.x, H); ctx.fillRect(W - g.x, 0, g.x, H);
+      ctx.strokeRect(g.x, 0, W - g.x * 2, H);
+      ctx.fillStyle = '#C81E14';
+      ctx.fillText('сетка профиля срежет по ' + Math.round(g.x) + ' px по бокам', g.x + 14, 44);
+    }
+    if (g.y > 1){
+      ctx.fillStyle = 'rgba(233,64,64,.18)'; ctx.strokeStyle = 'rgba(233,64,64,.95)';
+      ctx.fillRect(0, 0, W, g.y); ctx.fillRect(0, H - g.y, W, g.y);
+      ctx.strokeRect(0, g.y, W, H - g.y * 2);
+      ctx.fillStyle = '#C81E14';
+      ctx.fillText('сетка профиля срежет по ' + Math.round(g.y) + ' px сверху и снизу', 24, g.y + 42);
+    }
+
+    /* оранжевым — что закроет интерфейс сторис и Reels */
+    if (sf.top || sf.bottom || sf.right || sf.left){
+      ctx.fillStyle = 'rgba(255,150,40,.24)';
+      if (sf.top) ctx.fillRect(0, 0, W, sf.top);
+      if (sf.bottom) ctx.fillRect(0, H - sf.bottom, W, sf.bottom);
+      if (sf.right) ctx.fillRect(W - sf.right, 0, sf.right, H);
+      if (sf.left) ctx.fillRect(0, 0, sf.left, H);
+      ctx.fillStyle = '#8A4A00';
+      if (sf.bottom) ctx.fillText('интерфейс сторис: нижние ' + sf.bottom + ' px', 26, H - sf.bottom - 18);
+      if (sf.top) ctx.fillText('верхние ' + sf.top + ' px', 26, sf.top + 34);
+    }
+
+    /* синим — центральные 80% кадра: критичное держим здесь */
     ctx.strokeStyle = 'rgba(46,160,255,.95)';
     ctx.strokeRect(W * .1, H * .1, W * .8, H * .8);
-    if (S.fmt === '9x16'){
-      ctx.fillStyle = 'rgba(233,64,64,.20)';
-      ctx.fillRect(0, 0, W, 190); ctx.fillRect(0, H - 400, W, 400); ctx.fillRect(W - 120, 0, 120, H);
-    }
+
+    /* зелёным — рабочее поле, по которому стоит текст карточки */
+    ctx.setLineDash([]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(24,160,90,.95)';
+    ctx.strokeRect(P.l, P.t, W - P.l - P.r, H - P.t - P.b);
+    ctx.fillStyle = '#12804A';
+    ctx.fillText('рабочее поле ' + Math.round(P.l) + '/' + Math.round(P.t) + '/' +
+                 Math.round(P.r) + '/' + Math.round(P.b), P.l + 6, H - P.b - 14);
     ctx.restore();
   }
   return ctx;
@@ -787,7 +1025,14 @@ function drawCard(cv, i, opts){
 /* ============================================================================
    5. ПРЕВЬЮ И ЛЕНТА
    ============================================================================ */
-const PREVIEW_W = () => (innerWidth < 900 ? Math.min(330, innerWidth - 40) : 300);
+/* Превью печатается почти в натуральную величину: карточка 1080 px при 300 px предпросмотра
+   не даёт увидеть ни кегль, ни воздух. Ширина берётся от свободного места рабочей области. */
+const ZOOMS = {s:{t:'S', w:380}, m:{t:'M', w:620}, l:{t:'L', w:880}};
+const PREVIEW_W = () => {
+  if (innerWidth < 900) return Math.min(360, innerWidth - 34);
+  const avail = (($('right') && $('right').clientWidth) || 980) - 46;
+  return Math.max(300, Math.min(ZOOMS[S.zoom].w, avail));
+};
 
 function renderCards(){
   const box = $('cards'); box.innerHTML = '';
@@ -796,17 +1041,52 @@ function renderCards(){
     const cv = document.createElement('canvas');
     cv.style.width = PREVIEW_W() + 'px';
     d.appendChild(cv);
+
     const bar = document.createElement('div'); bar.className = 'bar';
-    bar.innerHTML = '<span>' + (i + 1) + ' · ' + KINDS[s.kind] + '</span>';
-    const dl = document.createElement('button'); dl.textContent = 'PNG';
-    dl.onclick = () => downloadOne(i);
-    bar.appendChild(dl);
+    bar.innerHTML = '<span class="num">' + (i + 1) + '</span><span>' + KINDS[s.kind] + '</span>' +
+      '<span class="what"></span><span style="flex:1"></span>' +
+      '<button data-act="minus" title="мельче">' + UI.minus + '</button>' +
+      '<button data-act="plus" title="крупнее">' + UI.plus + '</button>' +
+      '<button data-act="reset" title="вернуть на место">' + UI.reset + '</button>' +
+      '<button data-act="png" class="prim" title="скачать эту карточку">' + UI.down + ' PNG</button>';
     d.appendChild(bar);
     box.appendChild(d);
     drawCard(cv, i);
-    attachCrop(d, cv, i);
+    attachStage(d, cv, i);
+
+    bar.querySelectorAll('[data-act]').forEach(bt => bt.onclick = () => {
+      const act = bt.dataset.act, sl = S.slides[i];
+      if (act === 'png'){ downloadOne(i); return; }
+      const onText = S.sel && S.sel.i === i;
+      if (act === 'reset'){
+        if (onText) sl.off = null; else sl.crop = {x:0, y:0, z:1};
+      } else {
+        const k = act === 'plus' ? 1.08 : 1 / 1.08;
+        if (onText){
+          sl.off = Object.assign({dx:0, dy:0, dw:0, sc:1}, sl.off || {});
+          sl.off.sc = clamp(+(sl.off.sc * k).toFixed(3), 0.6, 2.2);
+        } else if (sl.img != null){
+          sl.crop = sl.crop || {x:0, y:0, z:1};
+          sl.crop.z = clamp(+(sl.crop.z * k).toFixed(3), 0.3, 6);
+        }
+      }
+      drawCard(cv, i); paintBar(d, i); save();
+    });
+    paintBar(d, i);
   });
   renderFeed();
+}
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+/* Подпись в панели карточки говорит, чем сейчас управляют кнопки: текстом или фотографией. */
+function paintBar(boxEl, i){
+  const w = boxEl.querySelector('.what'); if (!w) return;
+  const sl = S.slides[i], onText = S.sel && S.sel.i === i;
+  const o = sl.off || {};
+  w.textContent = onText
+    ? 'текст ' + Math.round((o.sc || 1) * 100) + '%'
+    : (sl.img != null ? 'фото ' + Math.round(((sl.crop && sl.crop.z) || 1) * 100) + '%'
+                      : 'ткните в текст, чтобы взять его');
+  boxEl.classList.toggle('sel', !!onText);
 }
 function renderFeed(){
   const box = $('feed'); box.innerHTML = '';
@@ -823,32 +1103,118 @@ function renderFeed(){
     box.appendChild(cv);
   });
 }
-/* кроп фото мышью прямо по карточке */
-function attachCrop(boxEl, cv, i){
-  let sx = 0, sy = 0, base = null;
+/* Один слой взаимодействия на карточку. Попали в зону текста — берём текст, иначе фотографию:
+   отдельного переключателя режимов не нужно. Тянуть — двигать, колесо — масштаб,
+   двойной щелчок — правка прямо на карточке. */
+function attachStage(boxEl, cv, i){
+  const at = e => {
+    const r = cv.getBoundingClientRect(), k = F().w / r.width;
+    return {x:(e.clientX - r.left) * k, y:(e.clientY - r.top) * k};
+  };
+  const hit = p => (S.slides[i]._zones || []).find(z =>
+    p.x >= z.x - 14 && p.x <= z.x + z.w + 22 && p.y >= z.y - 14 && p.y <= z.y + z.h + 14);
+  let drag = null;
+
   cv.addEventListener('pointerdown', e => {
-    const s = S.slides[i];
-    if (s.kind !== 'photo' || s.img == null) return;
-    s.crop = s.crop || {x:0, y:0, z:1};
-    base = {x:s.crop.x, y:s.crop.y}; sx = e.clientX; sy = e.clientY;
-    boxEl.classList.add('dragging'); cv.setPointerCapture(e.pointerId);
+    if (e.button) return;
+    const sl = S.slides[i], p = at(e), z = hit(p);
+    if (z){
+      S.sel = {i:i, f:zKey(z)};
+      sl.off = Object.assign({dx:0, dy:0, dw:0, sc:1}, sl.off || {});
+      const onHandle = Math.abs(p.x - (z.x + z.w + 12)) < 26;
+      drag = {kind:onHandle ? 'width' : 'text', sx:p.x, sy:p.y, o:Object.assign({}, sl.off)};
+    } else if (sl.img != null){
+      S.sel = null;
+      sl.crop = sl.crop || {x:0, y:0, z:1};
+      drag = {kind:'photo', sx:p.x, sy:p.y, c:{x:sl.crop.x, y:sl.crop.y}};
+    } else {
+      S.sel = null;
+    }
+    if (drag){ boxEl.classList.add('dragging'); cv.setPointerCapture(e.pointerId); }
+    drawCard(cv, i); paintBar(boxEl, i);
   });
+
   cv.addEventListener('pointermove', e => {
-    if (!base) return;
-    const k = F().w / cv.getBoundingClientRect().width;
-    S.slides[i].crop.x = base.x + (e.clientX - sx) * k;
-    S.slides[i].crop.y = base.y + (e.clientY - sy) * k;
-    drawCard(cv, i);
+    if (!drag) return;
+    const sl = S.slides[i], p = at(e), f = F(), Pd = padOf();
+    const dx = p.x - drag.sx, dy = p.y - drag.sy;
+    if (drag.kind === 'text'){
+      /* блок не уезжает за кадр: слева до 8 px от края, справа оставляем 240 px текста */
+      sl.off.dx = clamp(drag.o.dx + dx, 8 - Pd.l, f.w - Pd.l - 240);
+      sl.off.dy = clamp(drag.o.dy + dy, 8 - Pd.t - 90, f.h - Pd.t - 90 - 200);
+    } else if (drag.kind === 'width'){
+      sl.off.dw = clamp(drag.o.dw + dx, 240 - (f.w - Pd.l - Pd.r), Pd.l + Pd.r - 16);
+    } else {
+      sl.crop.x = drag.c.x + dx; sl.crop.y = drag.c.y + dy;
+    }
+    drawCard(cv, i); paintBar(boxEl, i);
   });
-  cv.addEventListener('pointerup', () => { base = null; boxEl.classList.remove('dragging'); save(); });
+
+  const stop = () => { if (drag){ drag = null; boxEl.classList.remove('dragging'); save(); } };
+  cv.addEventListener('pointerup', stop);
+  cv.addEventListener('pointercancel', stop);
+
   cv.addEventListener('wheel', e => {
-    const s = S.slides[i];
-    if (s.kind !== 'photo' || s.img == null) return;
-    e.preventDefault();
-    s.crop = s.crop || {x:0, y:0, z:1};
-    s.crop.z = Math.min(4, Math.max(1, s.crop.z * (e.deltaY < 0 ? 1.06 : .94)));
-    drawCard(cv, i); save();
+    const sl = S.slides[i], p = at(e), z = hit(p);
+    if (z){
+      e.preventDefault();
+      S.sel = {i:i, f:zKey(z)};
+      sl.off = Object.assign({dx:0, dy:0, dw:0, sc:1}, sl.off || {});
+      sl.off.sc = clamp(+(sl.off.sc * (e.deltaY < 0 ? 1.05 : 1 / 1.05)).toFixed(3), 0.6, 2.2);
+    } else if (sl.img != null){
+      e.preventDefault();
+      sl.crop = sl.crop || {x:0, y:0, z:1};
+      sl.crop.z = clamp(+(sl.crop.z * (e.deltaY < 0 ? 1.06 : .94)).toFixed(3), 0.3, 6);
+    } else return;
+    drawCard(cv, i); paintBar(boxEl, i); save();
   }, {passive:false});
+
+  cv.addEventListener('dblclick', e => {
+    const z = hit(at(e));
+    if (z) editZone(boxEl, cv, i, z);
+  });
+}
+
+/* Правка прямо на карточке: поверх зоны встаёт textarea, совпадающая по позиции, кеглю
+   и начертанию. Пока она открыта, карточка перерисовывается точечно — полная перерисовка
+   списка убила бы и саму textarea, и фокус в ней. */
+let EDITOR = null;
+function closeEditor(){ if (EDITOR){ const e = EDITOR; EDITOR = null; e.remove(); } }
+function editZone(boxEl, cv, i, z){
+  closeEditor();
+  const sl = S.slides[i], k = cv.getBoundingClientRect().width / F().w;
+  const ta = document.createElement('textarea');
+  ta.className = 'oncard';
+  ta.value = zoneValue(sl, z);
+  ta.style.left = (z.x * k) + 'px';
+  ta.style.top = (z.y * k) + 'px';
+  ta.style.width = (z.w * k) + 'px';
+  ta.style.height = Math.max(30, z.h * k + 10) + 'px';
+  ta.style.fontSize = Math.max(11, z.size * k) + 'px';
+  ta.style.lineHeight = z.lh;
+  ta.style.fontWeight = z.weight;
+  boxEl.appendChild(ta);
+  EDITOR = ta;
+  ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+
+  const push = () => { zoneSet(sl, z, ta.value); syncEd(i, z); drawCard(cv, i); };
+  ta.addEventListener('input', push);
+  ta.addEventListener('keydown', ev => {
+    ev.stopPropagation();
+    if (ev.key === 'Escape'){ closeEditor(); renderCards(); }
+    if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)){ push(); closeEditor(); renderCards(); save(); }
+  });
+  ta.addEventListener('blur', () => { push(); closeEditor(); renderCards(); save(); });
+}
+/* Обратная связь с блоком слева: подменяем значение конкретного поля, а не пересобираем
+   редактор — иначе на каждом символе терялся бы фокус. */
+function syncEd(i, z){
+  const ed = $('eds').children[i]; if (!ed) return;
+  const el = ed.querySelector('[data-f="' + z.f + '"]');
+  if (!el) return;
+  const sl = S.slides[i];
+  const v = z.f === 'items' ? (sl.items || []).join('\n') : String(sl[z.f] || '');
+  if (el.value !== v) el.value = v;
 }
 
 /* ============================================================================
@@ -1034,7 +1400,7 @@ function makeCaption(){
     nums.length ? '\nЦифра: ' + nums.join(' · ') : '',
     facts.length ? '\n' + facts.map(f => '— ' + f).join('\n') : '',
     '\n' + (S.brand.source || ''),
-    '\nПолный материал — по ссылке в профиле. Сохраните пост, если цифры пригодятся в работе.',
+    '\n' + (S.brand.capTail || ''),
     '\n' + all.join(' ')
   ].filter(Boolean).join('\n');
   $('capOut').value = out;
@@ -1091,8 +1457,9 @@ function seg(el, obj, key, after){
 function save(){
   try{
     localStorage.setItem('postinsta', JSON.stringify({
-      proj:S.proj, fmt:S.fmt, theme:S.theme, brand:S.brand, raw:$('raw').value,
-      slides:S.slides.map(s => Object.assign({}, s, {img:null}))   /* картинки не сериализуем */
+      proj:S.proj, fmt:S.fmt, theme:S.theme, pad:S.pad, zoom:S.zoom, demo:S.demo,
+      brand:S.brand, raw:$('raw').value,
+      slides:S.slides.map(s => Object.assign({}, s, {img:null, _zones:null}))  /* картинки и зоны не сериализуем */
     }));
   }catch(e){}
 }
@@ -1102,6 +1469,9 @@ function load(){
     if (!d) return false;
     S.proj = (d.proj && PROJECTS[d.proj]) ? d.proj : S.proj;
     S.fmt = d.fmt || S.fmt;
+    S.pad = +d.pad || S.pad;
+    S.zoom = ZOOMS[d.zoom] ? d.zoom : S.zoom;
+    S.demo = !!d.demo;
     S.theme = (d.theme && THEMES[d.theme]) ? d.theme : S.theme;
     Object.assign(S.brand, d.brand || {});
     S.slides = d.slides || [];
@@ -1110,11 +1480,14 @@ function load(){
   }catch(e){ return false; }
 }
 function syncBrandInputs(){
-  $('fMark').value = S.brand.mark; $('fRubric').value = S.brand.rubric;
+  $('fRubric').value = S.brand.rubric;
   $('fHandle').value = S.brand.handle; $('fDate').value = S.brand.date;
   $('fSource').value = S.brand.source; $('fFoot').value = S.brand.foot || '';
+  $('fSwipe').value = S.brand.swipe || ''; $('fCtaTitle').value = S.brand.ctaTitle || '';
+  $('fCtaItems').value = S.brand.ctaItems || ''; $('fCapTail').value = S.brand.capTail || '';
 }
-[['fMark','mark'],['fRubric','rubric'],['fHandle','handle'],['fDate','date'],['fSource','source'],['fFoot','foot']]
+[['fRubric','rubric'],['fHandle','handle'],['fDate','date'],['fSource','source'],['fFoot','foot'],['fSwipe','swipe'],['fCtaTitle','ctaTitle'],
+  ['fCtaItems','ctaItems'],['fCapTail','capTail']]
   .forEach(([id, k]) => $(id).addEventListener('input', () => {
     S.brand[k] = $(id).value; renderCards(); save();
   }));
@@ -1129,8 +1502,10 @@ function applyProject(key, freshBrand){
   if (!THEMES[S.theme] || THEMES[S.theme].proj !== S.proj) S.theme = p.themes[0];
   if (freshBrand) Object.assign(S.brand, p.brand, {date:S.brand.date});
   document.body.classList.toggle('proj-turmush', S.proj === 'turmush');
-  $('bProj').textContent = 'проект: ' + p.t;
-  paintThemeSeg(); syncBrandInputs(); renderCards(); renderFeed(); save();
+  $('bProj').innerHTML = UI.proj + '<span>' + p.t + '</span>';
+  paintThemeSeg(); syncBrandInputs(); padHint();
+  if (S.demo && freshBrand) loadDemo();      /* демо ещё не тронуто — показываем его на языке проекта */
+  renderCards(); renderFeed(); save();
 }
 function paintThemeSeg(){
   const own = {};
@@ -1154,15 +1529,43 @@ function renderPick(){
 }
 function openPick(){ renderPick(); document.body.classList.add('picking'); }
 
+function touched(){ S.demo = false; }
 function build(){
   const want = Math.max(3, Math.min(12, +$('nSlides').value || 8));
   const sl = buildSlides($('raw').value, want);
   if (!sl.length){ alert('Вставьте текст новости — из пустого поля собирать нечего.'); return; }
-  S.slides = sl; renderEds(); renderCards(); makeCaption(); save();
+  S.slides = sl; touched(); renderEds(); renderCards(); makeCaption(); save();
 }
-$('bBuild').onclick = build; $('bBuild2').onclick = build;
+$('raw').addEventListener('input', touched);
+$('bBuild2').onclick = build;
 $('bAdd').onclick = () => { S.slides.push({kind:'text', title:'', text:'', icon:'none', img:null});
   renderEds(); renderCards(); save(); };
+/* Подпись под ползунком объясняет, почему поле может оказаться больше выбранного:
+   сетка профиля и интерфейс сторис имеют право на свой минимум. */
+function padHint(){
+  const P = padOf(), g = gridCrop(S.fmt), sf = SAFE[S.fmt];
+  $('padVal').textContent = S.pad;
+  const parts = [];
+  if (g.x > 1) parts.push('сетка профиля срежет ' + Math.round(g.x) + ' px по бокам');
+  if (g.y > 1) parts.push('сетка профиля срежет ' + Math.round(g.y) + ' px сверху и снизу');
+  if (sf.bottom) parts.push('интерфейс сторис занимает ' + sf.bottom + ' px снизу и ' + sf.right + ' px справа');
+  parts.push('итог: ' + Math.round(P.l) + '/' + Math.round(P.t) + '/' + Math.round(P.r) + '/' + Math.round(P.b));
+  $('padNote').textContent = parts.join('; ') + '.';
+}
+$('fPad').addEventListener('input', () => {
+  S.pad = +$('fPad').value; padHint(); renderCards(); renderFeed(); save();
+});
+/* Иконки ставим из кода: разметка кнопок остаётся читаемой, а набор иконок — в одном месте. */
+function paintIcons(){
+  $('bAddPhoto').innerHTML = UI.photo + '<span>фото</span>';
+  $('bAll').innerHTML = UI.down + '<span>скачать всё</span>';
+  $('bBuild2').innerHTML = UI.build + '<span>собрать карточки из текста</span>';
+  $('bAdd').innerHTML = UI.add + '<span>слайд</span>';
+  $('bSafe').innerHTML = UI.zone + '<span>safe-zone</span>';
+  $('bFeed').innerHTML = UI.grid + '<span>лента</span>';
+  $('bCap').innerHTML = UI.wand + '<span>сгенерировать подпись</span>';
+  $('bCapCopy').innerHTML = UI.copy + '<span>копировать</span>';
+}
 $('bProj').onclick = openPick;
 $('bAll').onclick = downloadAll;
 $('bZip').onclick = downloadZip;
@@ -1176,22 +1579,36 @@ $('bAddPhoto').onclick = () => {
   inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true;
   inp.onchange = () => addFiles(inp.files); inp.click();
 };
+$('right').addEventListener('pointerdown', e => {
+  if (e.target.id === 'right' && S.sel){ S.sel = null; renderCards(); }
+});
 addEventListener('resize', () => {
   document.querySelectorAll('#cards canvas').forEach(c => c.style.width = PREVIEW_W() + 'px');
+  closeEditor();                    /* поле правки было привязано к прежнему масштабу */
 });
 
-const DEMO = `Импорт сахара в Кыргызстан вырос в 2,4 раза за полгода
-За январь–июнь 2026 года страна закупила 118 тыс. тонн сахара и сахарного сиропа — больше, чем за весь 2025 год.
-Основным поставщиком стала Россия: на неё пришлось 71% всего объёма поставок.
-Средняя цена ввоза составила 62 сома за килограмм.
-Собственные заводы закрыли только 29% потребности внутреннего рынка.
-Осенью предприятия начнут переработку урожая сахарной свёклы, тогда станет видно, сократится ли ввоз.`;
+/* По умолчанию — одна карточка-обложка на языке проекта, а не простыня из восьми слайдов:
+   пустой инструмент понятнее, чем чужой пример, который надо сначала стереть.
+   Текст демо — подсказка, а не выдуманная новость с цифрами. */
+function demoSlide(){
+  const d = PJ().demo;
+  return [{kind:'cover', title:d.title, text:d.text, icon:'none', img:null}];
+}
+function loadDemo(){
+  S.slides = demoSlide();
+  $('raw').value = PJ().demo.title + String.fromCharCode(10) + PJ().demo.text;
+  S.demo = true;
+  renderEds(); renderCards(); makeCaption();
+};
 
 (function start(){
-  seg($('segFmt'), FORMATS, 'fmt', () => { renderCards(); });
+  seg($('segFmt'), FORMATS, 'fmt', () => { padHint(); renderCards(); });
+  seg($('segZoom'), ZOOMS, 'zoom', () => { renderCards(); });
+  paintIcons();
   const had = load();
+  $('fPad').value = S.pad;
   applyProject(S.proj, false);
-  if (!had){ $('raw').value = DEMO; S.brand.date = '30 июля 2026'; syncBrandInputs(); build(); }
+  if (!had) loadDemo();
   else { renderEds(); renderCards(); makeCaption(); }
   renderImgs();
   openPick();                                  /* выбор проекта — первым экраном на каждом заходе */
