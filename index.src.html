@@ -527,7 +527,11 @@ function cover(ctx, im, x, y, w, h, crop){
    и тем, что заголовок сам подбирает кегль под высоту своей полосы. */
 function turmushCover(ctx, s, W, H, th, b, onPhoto){
   const p = PROJECTS.turmush, k = H / 1350, R = v => Math.round(v * k);
-  const strip = R(92), bandH = R(210), bandY = H - strip - bandH;
+  const strip = R(92), bandH = R(210);
+  /* в сторис нижние 400 px отданы интерфейсу Instagram: полосу и строку сайта
+     поднимаем над ними, иначе заголовок уедет под подпись и кнопки */
+  const lift = S.fmt === '9x16' ? R(330) : 0;
+  const bandY = H - strip - bandH - lift;
   const pad = R(58);
 
   if (onPhoto){
@@ -565,11 +569,11 @@ function turmushCover(ctx, s, W, H, th, b, onPhoto){
   ctx.fillText(b.source || '', pad, bandY + bandH - R(24));
 
   /* нижняя строка — тот самый «менее акцентный» #f1ddff */
-  ctx.fillStyle = p.soft; ctx.fillRect(0, H - strip, W, strip);
+  ctx.fillStyle = p.soft; ctx.fillRect(0, bandY + bandH, W, strip);
   const foot = (b.foot || '').toUpperCase();
   font(ctx, '700', R(28)); ctx.fillStyle = p.softInk;
   ctx.textAlign = 'center';
-  const fx = W / 2, fy = H - strip / 2 + R(10);
+  const fx = W / 2, fy = bandY + bandH + strip / 2 + R(10);
   ctx.fillText(foot, fx, fy);
   const dom = foot.match(/WWW\.[^\s]+/);       /* домен подчёркнут, как в образце */
   if (dom){
