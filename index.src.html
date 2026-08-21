@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>post-insta — карточки для Instagram из текста</title>
+<style>/*FONTS*/</style>
+<style>
+/* ============================================================================
+   Инструмент: текст новости → готовые карточки 1080 px для Instagram.
+   Всё офлайн: шрифты вшиты, рисование на canvas, экспорт PNG и ZIP локально.
+   Один рендер (drawCard) обслуживает и предпросмотр, и экспорт — что видно,
+   то и скачается.
+   ============================================================================ */
+:root{
+  --ui-bg:#111214; --ui-panel:#191B1E; --ui-line:#2A2D31; --ui-ink:#EDEEF0;
+  --ui-mute:#9BA1A8; --ui-acc:#9a2d25; --ui-acc2:#E4564A;
+}
+*{box-sizing:border-box; margin:0; padding:0}
+html,body{height:100%}
+body{
+  background:var(--ui-bg); color:var(--ui-ink); font-family:Arsenal,Georgia,serif; font-size:16px;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+button, select, input, textarea{font-family:inherit; font-size:inherit; color:inherit}
+button{cursor:pointer}
+
+/* ---------- верхняя панель ---------- */
+header{
+  flex:0 0 auto; display:flex; align-items:center; gap:14px; padding:12px 18px;
+  border-bottom:1px solid var(--ui-line); background:var(--ui-panel); flex-wrap:wrap;
+}
+header h1{font-size:20px; font-weight:700; letter-spacing:-.01em; white-space:nowrap}
+header h1 b{color:var(--ui-acc2)}
+.sp{flex:1}
+.btn{
+  background:#23262A; border:1px solid var(--ui-line); border-radius:10px; padding:9px 14px;
+  white-space:nowrap;
+}
+.btn:hover{background:#2C3035}
+.btn.acc{background:var(--ui-acc); border-color:#B3382E}
+.btn.acc:hover{background:#B3382E}
+.btn.ghost{background:transparent}
+.btn.on{border-color:var(--ui-acc2); color:#fff; background:#2E1D1B}
+.seg{display:flex; border:1px solid var(--ui-line); border-radius:10px; overflow:hidden}
+.seg button{background:#1E2124; border:0; padding:9px 12px; border-right:1px solid var(--ui-line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--ui-acc); color:#fff}
+label.fld{display:flex; flex-direction:column; gap:5px; font-size:13px; color:var(--ui-mute)}
+label.fld input, label.fld select{
+  background:#15171A; border:1px solid var(--ui-line); border-radius:8px; padding:8px 10px; min-width:0;
+}
+
+/* ---------- рабочая область ---------- */
+main{flex:1; min-height:0; display:grid; grid-template-columns:minmax(340px,420px) minmax(0,1fr)}
+#left{border-right:1px solid var(--ui-line); overflow:auto; padding:16px; display:flex; flex-direction:column; gap:14px}
+#right{overflow:auto; padding:22px; background:#0D0E10}
+
+textarea#raw{
+  width:100%; min-height:190px; resize:vertical; background:#15171A; border:1px solid var(--ui-line);
+  border-radius:12px; padding:12px; line-height:1.45;
+}
+.hint{font-size:13px; color:var(--ui-mute); line-height:1.45}
+.row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+h3.sec{font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--ui-mute); font-weight:700;
+       margin-top:6px; border-top:1px solid var(--ui-line); padding-top:12px}
+
+/* ---------- редактор слайдов ---------- */
+.slide-ed{border:1px solid var(--ui-line); border-radius:12px; background:#15171A; overflow:hidden}
+.slide-ed > .hd{display:flex; align-items:center; gap:8px; padding:8px 10px; background:#1B1E22; font-size:13px}
+.slide-ed > .hd .n{
+  width:24px; height:24px; border-radius:7px; background:var(--ui-acc); color:#fff;
+  display:grid; place-items:center; font-size:12px; font-weight:700; flex:0 0 auto;
+}
+.slide-ed > .hd select{background:#15171A; border:1px solid var(--ui-line); border-radius:7px; padding:4px 6px; font-size:12px}
+.slide-ed > .hd .ic{background:transparent; border:1px solid var(--ui-line); border-radius:7px; padding:3px 7px; font-size:12px}
+.slide-ed > .bd{padding:10px; display:flex; flex-direction:column; gap:8px}
+.slide-ed textarea, .slide-ed input{
+  width:100%; background:#101215; border:1px solid var(--ui-line); border-radius:8px; padding:8px 10px;
+  line-height:1.4; font-size:14px;
+}
+.slide-ed textarea{resize:vertical; min-height:56px}
+.slide-ed .lbl{font-size:12px; color:var(--ui-mute)}
+.chips{display:flex; gap:6px; flex-wrap:wrap}
+.chip{
+  background:#101215; border:1px solid var(--ui-line); border-radius:8px; padding:5px 8px; font-size:12px;
+  display:flex; align-items:center; gap:6px;
+}
+.chip.on{border-color:var(--ui-acc2); background:#2A1B1A}
+.chip svg{width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2}
+.warn{color:#FFB4A8; font-size:12px}
+
+/* ---------- превью ---------- */
+#cards{display:flex; flex-wrap:wrap; gap:22px; align-items:flex-start}
+.cardbox{position:relative}
+.cardbox canvas{
+  display:block; border-radius:6px; background:#fff; box-shadow:0 18px 44px rgba(0,0,0,.5); cursor:grab;
+}
+.cardbox.dragging canvas{cursor:grabbing}
+.cardbox .bar{display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:var(--ui-mute)}
+.cardbox .bar button{background:#1E2124; border:1px solid var(--ui-line); border-radius:8px; padding:5px 9px; font-size:12px}
+.cardbox .over{
+  position:absolute; left:8px; top:8px; background:rgba(200,40,30,.92); color:#fff; font-size:12px;
+  padding:4px 8px; border-radius:6px;
+}
+
+/* лента профиля: тайл 3:4, как в Instagram с 2025 года */
+#feed{display:none; grid-template-columns:repeat(3, 1fr); gap:4px; max-width:420px; margin:0 auto}
+body.feedmode #cards{display:none}
+body.feedmode #feed{display:grid}
+#feed canvas{width:100%; display:block; background:#222}
+#feednote{display:none; max-width:420px; margin:14px auto 0; font-size:13px; color:var(--ui-mute); line-height:1.5}
+body.feedmode #feednote{display:block}
+
+/* ---------- мобильная раскладка: целевая ширина 390 ---------- */
+@media (max-width: 900px){
+  main{grid-template-columns:1fr; grid-template-rows:auto auto}
+  #left{border-right:0; border-bottom:1px solid var(--ui-line); max-height:none}
+  header{padding:10px 12px; gap:8px}
+  header h1{font-size:17px; width:100%}
+  #right{padding:12px}
+  #cards{gap:14px; justify-content:center}
+  .btn, .seg button{padding:8px 11px}
+}
+#drop{
+  position:fixed; inset:0; background:rgba(10,10,12,.86); display:none; place-items:center; z-index:99;
+  font-size:22px; border:4px dashed var(--ui-acc2);
+}
+#drop.on{display:grid}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>post·<b>insta</b> — текст в карточки</h1>
+  <div class="seg" id="segFmt"></div>
+  <div class="seg" id="segTheme"></div>
+  <button class="btn ghost" id="bSafe" title="показать зоны, которые обрезает или закрывает Instagram">safe-zone</button>
+  <button class="btn ghost" id="bFeed" title="как карточки будут выглядеть в сетке профиля">лента профиля</button>
+  <span class="sp"></span>
+  <button class="btn" id="bAddPhoto">+ фото</button>
+  <button class="btn" id="bZip">скачать всё (zip)</button>
+  <button class="btn acc" id="bBuild">собрать из текста</button>
+</header>
+
+<main>
+  <div id="left">
+    <label class="fld">текст новости
+      <textarea id="raw" placeholder="Вставьте сюда текст новости целиком. Первая строка или первое предложение станет заголовком-хуком, предложения с цифрами — карточками с крупной цифрой, остальное разложится по слайдам."></textarea>
+    </label>
+    <div class="row">
+      <button class="btn acc" id="bBuild2">собрать из текста</button>
+      <button class="btn" id="bAdd">+ слайд</button>
+      <label class="fld" style="flex:1">слайдов
+        <input type="number" id="nSlides" min="3" max="12" value="8">
+      </label>
+    </div>
+    <p class="hint">Оптимум по исследованиям — 8 слайдов формата 4:5: первый продаёт свайп,
+      последний просит сохранить. Каждый слайд должен читаться сам — Instagram может показать
+      карусель не с начала.</p>
+
+    <h3 class="sec">шапка и подвал</h3>
+    <div class="grid2">
+      <label class="fld">метка<input id="fMark" value="T"></label>
+      <label class="fld">рубрика<input id="fRubric" value="экономика"></label>
+      <label class="fld">аккаунт<input id="fHandle" value="@tazabek"></label>
+      <label class="fld">дата / надзаголовок<input id="fDate" value=""></label>
+    </div>
+    <label class="fld">источник (виден на каждом слайде)<input id="fSource" value="Источник: "></label>
+
+    <h3 class="sec">слайды</h3>
+    <div id="eds" style="display:flex; flex-direction:column; gap:10px"></div>
+
+    <h3 class="sec">фото</h3>
+    <div class="row" id="imgs"><span class="hint">Перетащите файлы в окно или нажмите «+ фото».
+      Фото привязывается к слайду в его редакторе, кроп — перетаскиванием прямо по карточке.</span></div>
+
+    <h3 class="sec">подпись к посту</h3>
+    <textarea id="capOut" style="width:100%; min-height:130px; background:#15171A; border:1px solid var(--ui-line); border-radius:12px; padding:12px; line-height:1.45" readonly></textarea>
+    <div class="row">
+      <button class="btn" id="bCap">сгенерировать подпись</button>
+      <button class="btn" id="bCapCopy">копировать</button>
+    </div>
+    <p class="hint">Хештеги — 6–8 тематических: «чем больше, тем лучше» не работает.
+      В тексте подписи первыми идут те 125 знаков, которые видно до «ещё».</p>
+  </div>
+
+  <div id="right">
+    <div id="cards"></div>
+    <div id="feed"></div>
+    <p id="feednote">Сетка профиля с 2025 года режет превью до 3:4 и кропает по центру:
+      у 4:5 срезается ~6% по бокам, у квадрата — 25%, у вертикали 9:16 — 25% по высоте.
+      Если в этом виде заголовок читается — в ленте прочитают тем более.</p>
+  </div>
+</main>
+
+<div id="drop">отпустите файлы — добавлю как фото</div>
+
+<script>
+/* ============================================================================
+   1. КОНСТАНТЫ
+   ============================================================================ */
+const FORMATS = {
+  '4x5':  {w:1080, h:1350, t:'4:5'},
+  '3x4':  {w:1080, h:1440, t:'3:4'},
+  '1x1':  {w:1080, h:1080, t:'1:1'},
+  '9x16': {w:1080, h:1920, t:'9:16'}
+};
+const THEMES = {
+  tazabek:{t:'светлая', bg:'#F4F5F7', ink:'#121212', mute:'#5A5F66', accent:'#9a2d25', line:'rgba(18,18,18,.14)', chip:'#FFFFFF', shade:'rgba(18,18,18,.07)'},
+  noir:   {t:'тёмная',  bg:'#121212', ink:'#F4F5F7', mute:'#A2A7AE', accent:'#E4564A', line:'rgba(244,245,247,.20)', chip:'#1D1D1D', shade:'rgba(244,245,247,.09)'},
+  paper:  {t:'бумага',  bg:'#F0EEE6', ink:'#141413', mute:'#6B6862', accent:'#C25A34', line:'rgba(20,20,19,.16)', chip:'#FBFAF6', shade:'rgba(20,20,19,.06)'}
+};
+/* Иконки нарисованы здесь же — ни одной сторонней лицензии.
+   Путь в системе координат 24×24, рисуется через Path2D. */
+const ICONS = {
+  none:   {d:'', t:'без иконки'},
+  up:     {d:'M12 19V6M6 12l6-6 6 6', t:'рост'},
+  down:   {d:'M12 5v13M6 12l6 6 6-6', t:'падение'},
+  coin:   {d:'M2 7h20v10H2zM12 9.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5M5 10v4M19 10v4', t:'деньги'},
+  chart:  {d:'M4 20V10M10 20V4M16 20v-7M22 20H2', t:'график'},
+  truck:  {d:'M2 7h11v9H2zM13 11h5l3 3v2h-8zM6 19a2 2 0 100-4 2 2 0 000 4zm11 0a2 2 0 100-4 2 2 0 000 4z', t:'логистика'},
+  factory:{d:'M3 21V10l6 4V10l6 4V7l6 4v10zM3 21h18', t:'производство'},
+  build:  {d:'M4 21V5l8-3v19M12 21V9l8 3v9M7 8h2M7 12h2M7 16h2M15 14h2M15 18h2', t:'город'},
+  doc:    {d:'M6 2h8l4 4v16H6zM14 2v5h4M9 12h7M9 16h7', t:'документ'},
+  globe:  {d:'M12 3a9 9 0 100 18 9 9 0 000-18zM3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18', t:'внешний рынок'},
+  users:  {d:'M8 11a3 3 0 100-6 3 3 0 000 6zm8 0a3 3 0 100-6 3 3 0 000 6zM2 20c0-3 2.7-5 6-5s6 2 6 5M14 15.5c2.6.4 6 1.8 6 4.5', t:'люди'},
+  alert:  {d:'M12 3l9 17H3zM12 9v5M12 17h.01', t:'риск'},
+  clock:  {d:'M12 3a9 9 0 100 18 9 9 0 000-18zM12 7v5l4 2', t:'сроки'},
+  save:   {d:'M6 3h12v18l-6-4.6L6 21z', t:'сохранить'},
+  send:   {d:'M21 3L3 10.5l7 2.5 2.5 7zM21 3l-9 11', t:'отправить'}
+};
+const KINDS = {
+  cover: 'обложка / хук',
+  text:  'текст',
+  number:'крупная цифра',
+  list:  'список фактов',
+  quote: 'цитата',
+  photo: 'фото + текст',
+  cta:   'финал / призыв'
+};
+const PAD = 88;
+
+/* ============================================================================
+   2. СОСТОЯНИЕ
+   ============================================================================ */
+const S = {
+  fmt:'4x5', theme:'tazabek', safe:false, feed:false,
+  brand:{mark:'T', rubric:'экономика', handle:'@tazabek', date:'', source:'Источник: '},
+  slides:[], images:[]          /* images: {img, name} ; slide.crop {x,y,z} */
+};
+const $ = id => document.getElementById(id);
+const F = () => FORMATS[S.fmt];
+const T = () => THEMES[S.theme];
+
+/* ============================================================================
+   3. РАЗБОР ТЕКСТА НА СЛАЙДЫ
+   Логика: заголовок → цифры → остальные факты → финал.
+   Предложения с числами ценнее прочих: в деловой карточке цифра и есть новость.
+   ============================================================================ */
+function sentences(t){
+  return t.replace(/\s+/g, ' ')
+    .replace(/([.!?…])\s+(?=[«"A-ZА-ЯЁ0-9])/g, '$1|')
+    .split('|').map(s => s.trim()).filter(s => s.length > 1);
+}
+/* Единица подхватывается вместе с множителем: «118 тыс. тонн», а не «118 тыс.». */
+const SIMPLE = 'тонн\\w*|кг|сом\\w*|долл\\w*|руб\\w*|штук\\w*|шт|человек|мест|га|кв\\.?\\s?м|км|литр\\w*|компани\\w*';
+const UNIT_RE = new RegExp('^((?:тыс\\.?|млн|млрд)(?:\\s*(?:' + SIMPLE + '))?|%|процент\\w*|раза?|' + SIMPLE + ')', 'i');
+
+/* Главная цифра предложения — не первая, а самая осмысленная.
+   Год («в 2026 году») выглядит как число, но новостью не является: без этой
+   проверки на карточку уезжает «2026» вместо «118 тыс. тонн». */
+function firstNumber(s){
+  const re = /-?\d[\d\s]*(?:[.,]\d+)?/g;
+  let m, best = null;
+  while ((m = re.exec(s))){
+    const raw = m[0].trim().replace(/\s+/g, ' ');
+    const tail = s.slice(m.index + m[0].length).replace(/^[\s,]+/, '');
+    const unit = (tail.match(UNIT_RE) || [''])[0];
+    const digits = raw.replace(/\D/g, '');
+    const isYear = /^(19|20)\d\d$/.test(digits) && !unit;
+    const value = parseFloat(raw.replace(/\s/g, '').replace(',', '.')) || 0;
+    let score = 0;
+    if (unit) score += 5;
+    if (isYear) score -= 6;
+    if (/^(в|за|с|по|до)\s*$/i.test(s.slice(Math.max(0, m.index - 3), m.index))) score -= 1;
+    score += Math.min(3, Math.log10(Math.abs(value) + 1));
+    if (!best || score > best.score) best = {val:raw, unit:unit, score:score, at:m.index, len:m[0].length};
+  }
+  return best;
+}
+/* Части предложения вокруг цифры: до неё — подпись сверху, после — пояснение снизу.
+   Так карточка с цифрой остаётся понятной сама по себе, без остальной карусели. */
+function numParts(s, n){
+  const before = s.slice(0, n.at).replace(/[,;:—-]\s*$/, '').trim();
+  const after = s.slice(n.at + n.len)
+    .replace(new RegExp('^\\s*' + n.unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '')
+    .replace(/^[\s,.]+/, '').replace(/[.!?…]$/, '').trim();
+  const pick = before.split(' ').length >= 2 ? before : after;
+  return {
+    label: shorten(pick.charAt(0).toUpperCase() + pick.slice(1), 46),
+    tail: shorten(pick === after ? '' : after, 120)
+  };
+}
+function shorten(s, n){
+  if (s.length <= n) return s;
+  const cut = s.slice(0, n);
+  return cut.slice(0, cut.lastIndexOf(' ')).replace(/[,;:—-]$/, '') + '…';
+}
+function buildSlides(raw, want){
+  const lines = raw.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  if (!lines.length) return [];
+  /* заголовок: первая строка, если она короткая (так журналист и пишет), иначе первое предложение */
+  let head = lines[0], rest = lines.slice(1).join(' ');
+  if (head.length > 140){ const ss = sentences(head); head = ss[0]; rest = ss.slice(1).join(' ') + ' ' + rest; }
+  const ss = sentences(rest);
+
+  const lead = ss[0] || '';
+  const withNum = [], plain = [];
+  ss.forEach(s => (firstNumber(s) && s.length < 220 ? withNum : plain).push(s));
+
+  const out = [];
+  out.push({kind:'cover', title:shorten(head, 110), text:shorten(lead, 130), icon:'none', img:null});
+  const used = new Set();
+  /* цифровые слайды: сначала предложения с единицей измерения — там настоящая новость */
+  withNum.sort((a, b) => firstNumber(b).score - firstNumber(a).score);
+  withNum.slice(0, 2).forEach((s, i) => {
+    const n = firstNumber(s), pp = numParts(s, n);
+    out.push({kind:'number', title:pp.label, num:n.val, unit:n.unit,
+              text:pp.tail, icon:i === 0 ? 'chart' : 'coin', img:null});
+    used.add(s);
+  });
+  /* лид обложки — первое предложение, которое не ушло на цифровой слайд:
+     иначе главная цифра дважды подряд, и на обложке она мелкая */
+  out[0].text = shorten(ss.find(s => !used.has(s)) || lead, 130);
+  /* список фактов из оставшихся предложений с цифрами */
+  const factPool = withNum.filter(s => !used.has(s)).concat(plain.slice(1));
+  if (factPool.length){
+    out.push({kind:'list', title:'Что важно понять',
+              items:factPool.slice(0, 3).map(s => shorten(s.replace(/[.!?…]$/, ''), 78)), icon:'none', img:null});
+    factPool.slice(0, 3).forEach(s => used.add(s));
+  }
+  /* остальное — текстовыми слайдами, пока не наберём нужное число */
+  factPool.filter(s => !used.has(s)).forEach(s => {
+    if (out.length < Math.max(3, want) - 1)
+      out.push({kind:'text', title:'', text:shorten(s, 260), icon:'none', img:null});
+  });
+  out.push({kind:'cta', title:'Полный материал — на tazabek.kg',
+            items:['Сохраните, чтобы вернуться к цифрам', 'Отправьте тому, кому это по работе'],
+            icon:'save', img:null});
+  return out.slice(0, Math.max(3, want));
+}
+
+/* ============================================================================
+   4. РИСОВАНИЕ КАРТОЧКИ (единый рендер для превью и экспорта)
+   ============================================================================ */
+function font(ctx, weight, size){ ctx.font = weight + ' ' + size + 'px Arsenal, Georgia, serif'; }
+function wrap(ctx, text, maxW){
+  const words = String(text).split(/\s+/), lines = [];
+  let cur = '';
+  for (const w of words){
+    const test = cur ? cur + ' ' + w : w;
+    if (ctx.measureText(test).width > maxW && cur){ lines.push(cur); cur = w; }
+    else cur = test;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+/* подбор кегля: текст обязан влезть в отведённую высоту, обрезать нельзя */
+function fit(ctx, text, maxW, maxH, start, min, lh, weight){
+  for (let s = start; s >= min; s -= 2){
+    font(ctx, weight, s);
+    const lines = wrap(ctx, text, maxW);
+    if (lines.length * s * lh <= maxH) return {size:s, lines, lh};
+  }
+  font(ctx, weight, min);
+  return {size:min, lines:wrap(ctx, text, maxW), lh};
+}
+function drawLines(ctx, o, x, y, color){
+  ctx.fillStyle = color;
+  font(ctx, ctx.__w || '400', o.size);
+  o.lines.forEach((l, i) => ctx.fillText(l, x, y + o.size * .82 + i * o.size * o.lh));
+  return y + o.lines.length * o.size * o.lh;
+}
+function block(ctx, text, x, y, maxW, maxH, start, min, lh, weight, color){
+  ctx.__w = weight;
+  const o = fit(ctx, text, maxW, maxH, start, min, lh, weight);
+  return drawLines(ctx, o, x, y, color);
+}
+function icon(ctx, name, x, y, size, color, width){
+  const ic = ICONS[name];
+  if (!ic || !ic.d) return;
+  ctx.save();
+  ctx.translate(x, y); ctx.scale(size / 24, size / 24);
+  ctx.strokeStyle = color; ctx.lineWidth = width || 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.stroke(new Path2D(ic.d));
+  ctx.restore();
+}
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function cover(ctx, im, x, y, w, h, crop){
+  const z = (crop && crop.z) || 1, ox = (crop && crop.x) || 0, oy = (crop && crop.y) || 0;
+  const k = Math.max(w / im.naturalWidth, h / im.naturalHeight) * z;
+  const dw = im.naturalWidth * k, dh = im.naturalHeight * k;
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.drawImage(im, x + (w - dw) / 2 + ox, y + (h - dh) / 2 + oy, dw, dh);
+  ctx.restore();
+}
+
+function drawCard(cv, i, opts){
+  opts = opts || {};
+  const s = S.slides[i], n = S.slides.length, f = F(), th = T();
+  const W = f.w, H = f.h;
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const onPhoto = s.kind === 'photo' && s.img != null && S.images[s.img];
+  const ink = onPhoto ? '#fff' : th.ink;
+  const mute = onPhoto ? 'rgba(255,255,255,.85)' : th.mute;
+  const line = onPhoto ? 'rgba(255,255,255,.32)' : th.line;
+
+  /* фон */
+  ctx.fillStyle = th.bg; ctx.fillRect(0, 0, W, H);
+  if (onPhoto){
+    cover(ctx, S.images[s.img].img, 0, 0, W, H, s.crop);
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, 'rgba(8,8,10,.18)'); g.addColorStop(.42, 'rgba(8,8,10,.42)');
+    g.addColorStop(1, 'rgba(8,8,10,.88)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  } else {
+    /* тихий фоновый узор — свои формы, ничего чужого */
+    ctx.save(); ctx.globalAlpha = .07; ctx.fillStyle = th.accent;
+    ctx.beginPath(); ctx.arc(W - 120, 180, 150, 0, 7); ctx.fill();
+    ctx.globalAlpha = .10; ctx.strokeStyle = th.accent; ctx.lineWidth = 8;
+    [300, 460, 620].forEach(r => { ctx.beginPath(); ctx.arc(W, H - 40, r, 0, 7); ctx.stroke(); });
+    ctx.restore();
+  }
+
+  /* шапка */
+  const b = S.brand;
+  font(ctx, '700', 34); const mw = ctx.measureText(b.mark).width;
+  ctx.fillStyle = th.accent; roundRect(ctx, PAD, PAD - 6, mw + 36, 56, 28); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillText(b.mark, PAD + 18, PAD + 32);
+  font(ctx, '700', 30);
+  ctx.fillStyle = mute;
+  const rub = (b.rubric || '').toUpperCase().split('').join(' ');
+  ctx.fillText(rub, PAD + mw + 60, PAD + 30);
+  ctx.textAlign = 'right'; ctx.fillText((i + 1) + '/' + n, W - PAD, PAD + 30); ctx.textAlign = 'left';
+
+  /* подвал */
+  const footY = H - PAD - 40;
+  ctx.strokeStyle = line; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(PAD, footY - 26); ctx.lineTo(W - PAD, footY - 26); ctx.stroke();
+  ctx.__w = '400'; font(ctx, '400', 28); ctx.fillStyle = mute;
+  wrap(ctx, b.source || '', W - PAD * 2 - 300).slice(0, 2)
+    .forEach((l, k) => ctx.fillText(l, PAD, footY + 4 + k * 34));
+  ctx.textAlign = 'right';
+  if (i < n - 1){
+    font(ctx, '700', 30); ctx.fillStyle = th.accent;
+    ctx.fillText('листайте  →', W - PAD, footY + 4);
+  } else {
+    font(ctx, '700', 30); ctx.fillStyle = ink;
+    ctx.fillText(b.handle || '', W - PAD, footY + 4);
+  }
+  ctx.textAlign = 'left';
+
+  /* тело */
+  const x = PAD, maxW = W - PAD * 2;
+  const top = PAD + 90, bot = footY - 70, avail = bot - top;
+  let y = top;
+
+  if (s.kind === 'cover'){
+    const hasDate = !!(b.date || '').trim();
+    const hTitle = Math.min(avail * .62, avail - (s.text ? 200 : 0));
+    y = top + Math.max(0, (avail - (hTitle + (s.text ? 170 : 0))) * .38);
+    if (hasDate){
+      font(ctx, '700', 32); ctx.fillStyle = th.accent;
+      ctx.fillText(b.date.toUpperCase().split('').join(' '), x, y + 26); y += 74;
+    }
+    y = block(ctx, s.title || '', x, y, maxW, hTitle, 104, 54, 1.04, '700', ink) + 34;
+    if (s.text) block(ctx, s.text, x, y, maxW, 200, 46, 34, 1.36, '400', mute);
+    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, W - PAD - 96, bot - 96, 96, th.accent, 2.2);
+
+  } else if (s.kind === 'number'){
+    y = top + avail * .12;
+    if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .3, 64, 40, 1.1, '700', ink) + 30;
+    const numTxt = String(s.num || '');
+    let size = numTxt.length > 6 ? 132 : numTxt.length > 4 ? 156 : 180;
+    ctx.__w = '700'; font(ctx, '700', size);
+    while (ctx.measureText(numTxt).width > maxW && size > 60){ size -= 6; font(ctx, '700', size); }
+    ctx.fillStyle = th.accent; ctx.fillText(numTxt, x, y + size * .84);
+    y += size * .96;
+    if (s.unit){ font(ctx, '700', 44); ctx.fillStyle = ink; ctx.fillText(s.unit, x, y + 34); y += 74; }
+    if (s.text) block(ctx, s.text, x, y + 12, maxW, avail * .3, 38, 30, 1.38, '400', mute);
+    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, W - PAD - 110, top + 10, 110, th.accent, 2);
+
+  } else if (s.kind === 'list' || s.kind === 'cta'){
+    const items = (s.items || []).filter(t => String(t).trim());
+    y = top + avail * .1;
+    if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .34, s.kind === 'cta' ? 64 : 64, 40, 1.1, '700', ink) + 40;
+    /* Пункты складываются встык с одним отбивкой, а не растягиваются по всей высоте:
+       иначе два пункта на слайде висят в противоположных углах и связь между ними теряется. */
+    const gap = 34, room = bot - y;
+    ctx.__w = '400';
+    const boxes = items.map(t => fit(ctx, t, maxW - 92, room, 40, 30, 1.34, '400'));
+    let need = 0;
+    boxes.forEach(o => need += Math.max(64, o.lines.length * o.size * o.lh) + gap);
+    y += Math.max(0, (room - (need - gap)) * .28);
+    items.forEach((t, k) => {
+      const cy = y, o = boxes[k];
+      if (s.kind === 'cta'){
+        ctx.fillStyle = th.shade; roundRect(ctx, x, cy, 64, 64, 20); ctx.fill();
+        icon(ctx, k === 0 ? 'save' : 'send', x + 13, cy + 13, 38, th.accent, 2.2);
+      } else {
+        ctx.fillStyle = th.accent; ctx.beginPath(); ctx.arc(x + 28, cy + 28, 28, 0, 7); ctx.fill();
+        ctx.fillStyle = '#fff'; font(ctx, '700', 30); ctx.textAlign = 'center';
+        ctx.fillText(String(k + 1), x + 28, cy + 39); ctx.textAlign = 'left';
+      }
+      ctx.__w = '400';
+      drawLines(ctx, o, x + 92, cy - 4, ink);
+      y += Math.max(64, o.lines.length * o.size * o.lh) + gap;
+    });
+    if (s.kind === 'cta'){
+      font(ctx, '700', 40); ctx.fillStyle = th.accent;
+      ctx.fillText(S.brand.handle || '', x, bot - 6);
+    }
+
+  } else if (s.kind === 'quote'){
+    y = top + avail * .12;
+    const q = '«' + (s.text || '') + '»';
+    y = block(ctx, q, x, y, maxW, avail * .58, 58, 38, 1.26, '700', ink) + 46;
+    ctx.fillStyle = th.accent; ctx.beginPath(); ctx.arc(x + 44, y + 44, 44, 0, 7); ctx.fill();
+    ctx.fillStyle = '#fff'; font(ctx, '700', 38); ctx.textAlign = 'center';
+    ctx.fillText((s.title || '·').trim().charAt(0).toUpperCase(), x + 44, y + 57); ctx.textAlign = 'left';
+    font(ctx, '700', 36); ctx.fillStyle = ink; ctx.fillText(s.title || '', x + 112, y + 36);
+    font(ctx, '400', 30); ctx.fillStyle = mute; ctx.fillText(s.unit || '', x + 112, y + 76);
+
+  } else if (s.kind === 'photo'){
+    if (!onPhoto){
+      ctx.fillStyle = th.shade; roundRect(ctx, x, top, maxW, avail * .5, 26); ctx.fill();
+      font(ctx, '400', 34); ctx.fillStyle = mute;
+      ctx.fillText('добавьте фото в редакторе слайда', x + 34, top + avail * .25);
+      y = top + avail * .5 + 40;
+    } else y = top + avail * .45;
+    if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .3, 64, 40, 1.1, '700', ink) + 26;
+    if (s.text) block(ctx, s.text, x, y, maxW, bot - y, 42, 32, 1.36, '400', onPhoto ? '#fff' : mute);
+
+  } else { /* text */
+    const t = s.text || '';
+    y = top + avail * .1;
+    if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .28, 64, 40, 1.1, '700', ink) + 30;
+    block(ctx, t, x, y, maxW, bot - y, 48, 32, 1.4, '400', ink);
+    if (s.icon && s.icon !== 'none') icon(ctx, s.icon, x, bot - 92, 92, th.accent, 2.2);
+  }
+
+  /* safe-zone: красным то, что срежет сетка профиля 3:4, синим — центральные 80% */
+  if (S.safe && !opts.clean){
+    const cropW = W * (1 - (W / H) / (3 / 4)) / 2;   /* сколько уйдёт по бокам при кропе в 3:4 */
+    ctx.save(); ctx.setLineDash([16, 12]); ctx.lineWidth = 3;
+    if (cropW > 1){
+      ctx.strokeStyle = 'rgba(233,64,64,.95)'; ctx.fillStyle = 'rgba(233,64,64,.16)';
+      ctx.fillRect(0, 0, cropW, H); ctx.fillRect(W - cropW, 0, cropW, H);
+      ctx.strokeRect(cropW, 0, W - cropW * 2, H);
+    } else {
+      const cropH = (H - W * 4 / 3) / 2;
+      if (cropH > 1){
+        ctx.strokeStyle = 'rgba(233,64,64,.95)'; ctx.fillStyle = 'rgba(233,64,64,.16)';
+        ctx.fillRect(0, 0, W, cropH); ctx.fillRect(0, H - cropH, W, cropH);
+      }
+    }
+    ctx.strokeStyle = 'rgba(46,160,255,.95)';
+    ctx.strokeRect(W * .1, H * .1, W * .8, H * .8);
+    if (S.fmt === '9x16'){
+      ctx.fillStyle = 'rgba(233,64,64,.20)';
+      ctx.fillRect(0, 0, W, 190); ctx.fillRect(0, H - 400, W, 400); ctx.fillRect(W - 120, 0, 120, H);
+    }
+    ctx.restore();
+  }
+  return ctx;
+}
+
+/* ============================================================================
+   5. ПРЕВЬЮ И ЛЕНТА
+   ============================================================================ */
+const PREVIEW_W = () => (innerWidth < 900 ? Math.min(330, innerWidth - 40) : 300);
+
+function renderCards(){
+  const box = $('cards'); box.innerHTML = '';
+  S.slides.forEach((s, i) => {
+    const d = document.createElement('div'); d.className = 'cardbox';
+    const cv = document.createElement('canvas');
+    cv.style.width = PREVIEW_W() + 'px';
+    d.appendChild(cv);
+    const bar = document.createElement('div'); bar.className = 'bar';
+    bar.innerHTML = '<span>' + (i + 1) + ' · ' + KINDS[s.kind] + '</span>';
+    const dl = document.createElement('button'); dl.textContent = 'PNG';
+    dl.onclick = () => downloadOne(i);
+    bar.appendChild(dl);
+    d.appendChild(bar);
+    box.appendChild(d);
+    drawCard(cv, i);
+    attachCrop(d, cv, i);
+  });
+  renderFeed();
+}
+function renderFeed(){
+  const box = $('feed'); box.innerHTML = '';
+  if (!S.feed) return;
+  S.slides.forEach((s, i) => {
+    const src = document.createElement('canvas');
+    drawCard(src, i, {clean:true});
+    const cv = document.createElement('canvas');
+    cv.width = 480; cv.height = 640;                       /* тайл 3:4 */
+    const c = cv.getContext('2d');
+    const k = Math.max(cv.width / src.width, cv.height / src.height);
+    const dw = src.width * k, dh = src.height * k;
+    c.drawImage(src, (cv.width - dw) / 2, (cv.height - dh) / 2, dw, dh);
+    box.appendChild(cv);
+  });
+}
+/* кроп фото мышью прямо по карточке */
+function attachCrop(boxEl, cv, i){
+  let sx = 0, sy = 0, base = null;
+  cv.addEventListener('pointerdown', e => {
+    const s = S.slides[i];
+    if (s.kind !== 'photo' || s.img == null) return;
+    s.crop = s.crop || {x:0, y:0, z:1};
+    base = {x:s.crop.x, y:s.crop.y}; sx = e.clientX; sy = e.clientY;
+    boxEl.classList.add('dragging'); cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!base) return;
+    const k = F().w / cv.getBoundingClientRect().width;
+    S.slides[i].crop.x = base.x + (e.clientX - sx) * k;
+    S.slides[i].crop.y = base.y + (e.clientY - sy) * k;
+    drawCard(cv, i);
+  });
+  cv.addEventListener('pointerup', () => { base = null; boxEl.classList.remove('dragging'); save(); });
+  cv.addEventListener('wheel', e => {
+    const s = S.slides[i];
+    if (s.kind !== 'photo' || s.img == null) return;
+    e.preventDefault();
+    s.crop = s.crop || {x:0, y:0, z:1};
+    s.crop.z = Math.min(4, Math.max(1, s.crop.z * (e.deltaY < 0 ? 1.06 : .94)));
+    drawCard(cv, i); save();
+  }, {passive:false});
+}
+
+/* ============================================================================
+   6. РЕДАКТОР СЛАЙДОВ
+   ============================================================================ */
+function renderEds(){
+  const box = $('eds'); box.innerHTML = '';
+  S.slides.forEach((s, i) => {
+    const d = document.createElement('div'); d.className = 'slide-ed';
+    const kindSel = Object.keys(KINDS).map(k =>
+      '<option value="' + k + '"' + (k === s.kind ? ' selected' : '') + '>' + KINDS[k] + '</option>').join('');
+    let fields = '';
+    if (s.kind === 'number'){
+      fields += fld('заголовок', 'title', s.title, true)
+             + '<div class="grid2">' + inp('цифра', 'num', s.num) + inp('единица', 'unit', s.unit) + '</div>'
+             + fld('пояснение', 'text', s.text, true);
+    } else if (s.kind === 'list' || s.kind === 'cta'){
+      fields += fld('заголовок', 'title', s.title, true)
+             + fld('пункты (по одному в строке)', 'items', (s.items || []).join('\n'), true);
+    } else if (s.kind === 'quote'){
+      fields += fld('цитата', 'text', s.text, true)
+             + '<div class="grid2">' + inp('кто', 'title', s.title) + inp('должность', 'unit', s.unit) + '</div>';
+    } else {
+      fields += fld('заголовок', 'title', s.title, true) + fld('текст', 'text', s.text, true);
+    }
+    const imgOpts = ['<option value="">— без фото —</option>'].concat(
+      S.images.map((im, k) => '<option value="' + k + '"' + (s.img === k ? ' selected' : '') + '>' + im.name + '</option>')).join('');
+    const ics = Object.keys(ICONS).map(k =>
+      '<button class="chip' + (s.icon === k ? ' on' : '') + '" data-ic="' + k + '" title="' + ICONS[k].t + '">' +
+      (ICONS[k].d ? '<svg viewBox="0 0 24 24"><path d="' + ICONS[k].d + '"/></svg>' : '—') + '</button>').join('');
+
+    d.innerHTML =
+      '<div class="hd"><span class="n">' + (i + 1) + '</span>' +
+        '<select data-f="kind">' + kindSel + '</select>' +
+        '<span class="sp" style="flex:1"></span>' +
+        '<button class="ic" data-mv="-1">↑</button><button class="ic" data-mv="1">↓</button>' +
+        '<button class="ic" data-del="1">✕</button></div>' +
+      '<div class="bd">' + fields +
+        '<div class="lbl">иконка</div><div class="chips">' + ics + '</div>' +
+        (S.images.length ? '<div class="lbl">фото</div><select data-f="img">' + imgOpts + '</select>' : '') +
+      '</div>';
+
+    d.querySelectorAll('[data-f]').forEach(el => {
+      el.oninput = () => {
+        const f = el.dataset.f;
+        if (f === 'kind'){ s.kind = el.value; renderEds(); }
+        else if (f === 'img'){ s.img = el.value === '' ? null : +el.value; s.crop = {x:0, y:0, z:1};
+                               if (s.kind !== 'photo') { s.kind = 'photo'; renderEds(); } }
+        else if (f === 'items') s.items = el.value.split('\n');
+        else s[f] = el.value;
+        renderCards(); save();
+      };
+    });
+    d.querySelectorAll('[data-ic]').forEach(el => {
+      el.onclick = () => { s.icon = el.dataset.ic; renderEds(); renderCards(); save(); };
+    });
+    d.querySelectorAll('[data-mv]').forEach(el => {
+      el.onclick = () => {
+        const j = i + (+el.dataset.mv);
+        if (j < 0 || j >= S.slides.length) return;
+        S.slides.splice(j, 0, S.slides.splice(i, 1)[0]);
+        renderEds(); renderCards(); save();
+      };
+    });
+    d.querySelector('[data-del]').onclick = () => {
+      S.slides.splice(i, 1); renderEds(); renderCards(); save();
+    };
+    box.appendChild(d);
+  });
+}
+const esc = v => String(v == null ? '' : v).replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const fld = (label, f, v, area) => '<div class="lbl">' + label + '</div>' +
+  (area ? '<textarea data-f="' + f + '">' + esc(v) + '</textarea>'
+        : '<input data-f="' + f + '" value="' + esc(v) + '">');
+const inp = (label, f, v) => '<div><div class="lbl">' + label + '</div><input data-f="' + f + '" value="' + esc(v) + '"></div>';
+
+/* ============================================================================
+   7. ЭКСПОРТ: PNG по одной и ZIP пачкой (zip пишем сами, без библиотек)
+   ============================================================================ */
+function exportCanvas(i){
+  const cv = document.createElement('canvas');
+  drawCard(cv, i, {clean:true});           /* safe-zone в файл не попадает никогда */
+  return cv;
+}
+const blobOf = cv => new Promise(r => cv.toBlob(r, 'image/png'));
+function fileName(i){
+  const base = (S.brand.rubric || 'card').replace(/[^\wа-яё\-]+/gi, '_').toLowerCase();
+  return base + '_' + S.fmt + '_' + String(i + 1).padStart(2, '0') + '.png';
+}
+async function downloadOne(i){
+  const b = await blobOf(exportCanvas(i));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = fileName(i); a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+const CRC = (() => { const t = []; for (let n = 0; n < 256; n++){ let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8){ let c = 0xFFFFFFFF;
+  for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0; }
+/* ZIP без сжатия (store): PNG уже сжат, а свой архиватор избавляет от внешней библиотеки */
+function zipStore(files){
+  const enc = new TextEncoder(), parts = [], central = [];
+  let off = 0;
+  files.forEach(f => {
+    const name = enc.encode(f.name), crc = crc32(f.data), n = f.data.length;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0, true);
+    lh.setUint16(8, 0, true); lh.setUint16(10, 0, true); lh.setUint16(12, 0, true);
+    lh.setUint32(14, crc, true); lh.setUint32(18, n, true); lh.setUint32(22, n, true);
+    lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), name, f.data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, n, true); ch.setUint32(24, n, true);
+    ch.setUint16(28, name.length, true); ch.setUint32(42, off, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    off += 30 + name.length + n;
+  });
+  const cstart = off;
+  let csize = 0; central.forEach(p => csize += p.length);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true);
+  end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, csize, true); end.setUint32(16, cstart, true);
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)], {type:'application/zip'});
+}
+async function downloadZip(){
+  const files = [];
+  for (let i = 0; i < S.slides.length; i++){
+    const b = await blobOf(exportCanvas(i));
+    files.push({name:fileName(i), data:new Uint8Array(await b.arrayBuffer())});
+  }
+  const cap = $('capOut').value.trim();
+  if (cap) files.push({name:'подпись.txt', data:new TextEncoder().encode(cap)});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(zipStore(files));
+  a.download = 'insta_' + S.fmt + '_' + S.slides.length + 'sl.zip'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+}
+
+/* ============================================================================
+   8. ПОДПИСЬ К ПОСТУ
+   Первые 125 знаков видно до «ещё» — туда выносим суть, а не приветствие.
+   ============================================================================ */
+const STOP = new Set('и в во не что он на я с со как а то все она так его но да ты к у же вы за бы по только ее мне было вот от меня еще нет о из ему теперь когда даже ну вдруг ли если уже или ни быть был него до вас нибудь опять уж вам ведь там потом себя ничего ей может они тут где есть надо ней для мы тебя их чем была сам чтоб без будто чего раз тоже себе под будет ж тогда кто этот того потому этого какой совсем ним здесь этом один почти мой тем чтобы нее сейчас были куда зачем всех никогда можно при наконец два об другой хоть после над больше тот через эти нас про всего них какая много разве три эту моя впрочем хорошо свою этой перед иногда лучше чуть том нельзя такой им более всегда конечно всю между'.split(' '));
+function makeCaption(){
+  const raw = $('raw').value.trim();
+  const first = (S.slides[0] && S.slides[0].title) || sentences(raw)[0] || '';
+  const nums = S.slides.filter(s => s.kind === 'number').map(s => s.num + (s.unit ? ' ' + s.unit : ''));
+  const facts = S.slides.filter(s => s.kind === 'list').flatMap(s => s.items || []).slice(0, 3);
+  const words = raw.toLowerCase().match(/[а-яёa-z]{5,}/g) || [];
+  const freq = {};
+  words.forEach(w => { if (!STOP.has(w)) freq[w] = (freq[w] || 0) + 1; });
+  const tags = Object.keys(freq).sort((a, b) => freq[b] - freq[a]).slice(0, 4)
+    .map(w => '#' + w.replace(/[^а-яёa-z]/g, ''));
+  const base = ['#кыргызстан', '#экономика', '#tazabek', '#бизнес'];
+  const all = [...new Set(tags.concat(base))].slice(0, 8);
+  const out = [
+    first,
+    nums.length ? '\nЦифра: ' + nums.join(' · ') : '',
+    facts.length ? '\n' + facts.map(f => '— ' + f).join('\n') : '',
+    '\n' + (S.brand.source || ''),
+    '\nПолный материал — по ссылке в профиле. Сохраните пост, если цифры пригодятся в работе.',
+    '\n' + all.join(' ')
+  ].filter(Boolean).join('\n');
+  $('capOut').value = out;
+  return out;
+}
+
+/* ============================================================================
+   9. ФОТО
+   ============================================================================ */
+function addFiles(list){
+  [...list].filter(f => /^image\//.test(f.type)).forEach(f => {
+    const im = new Image();
+    im.onload = () => {
+      S.images.push({img:im, name:f.name.slice(0, 22)});
+      renderImgs(); renderEds(); renderCards();
+    };
+    im.src = URL.createObjectURL(f);
+  });
+}
+function renderImgs(){
+  const box = $('imgs');
+  if (!S.images.length){
+    box.innerHTML = '<span class="hint">Перетащите файлы в окно или нажмите «+ фото».</span>'; return;
+  }
+  box.innerHTML = S.images.map((im, i) =>
+    '<span class="chip">' + im.name + ' <button data-rm="' + i + '" style="background:none;border:0;color:#FFB4A8">✕</button></span>').join('');
+  box.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => {
+    const i = +b.dataset.rm;
+    S.images.splice(i, 1);
+    S.slides.forEach(s => { if (s.img === i) s.img = null; else if (s.img > i) s.img--; });
+    renderImgs(); renderEds(); renderCards();
+  });
+}
+['dragenter', 'dragover'].forEach(ev => addEventListener(ev, e => {
+  e.preventDefault(); $('drop').classList.add('on');
+}));
+['dragleave', 'drop'].forEach(ev => addEventListener(ev, e => {
+  e.preventDefault();
+  if (ev === 'drop' && e.dataTransfer) addFiles(e.dataTransfer.files);
+  if (ev === 'drop' || e.clientX === 0) $('drop').classList.remove('on');
+}));
+
+/* ============================================================================
+   10. UI, СОХРАНЕНИЕ, СТАРТ
+   ============================================================================ */
+function seg(el, obj, key, after){
+  el.innerHTML = Object.keys(obj).map(k =>
+    '<button data-k="' + k + '"' + (S[key] === k ? ' class="on"' : '') + '>' +
+    (obj[k].t || k) + '</button>').join('');
+  el.querySelectorAll('button').forEach(b => b.onclick = () => {
+    S[key] = b.dataset.k; seg(el, obj, key, after); after && after(); save();
+  });
+}
+function save(){
+  try{
+    localStorage.setItem('postinsta', JSON.stringify({
+      fmt:S.fmt, theme:S.theme, brand:S.brand, raw:$('raw').value,
+      slides:S.slides.map(s => Object.assign({}, s, {img:null}))   /* картинки не сериализуем */
+    }));
+  }catch(e){}
+}
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem('postinsta') || 'null');
+    if (!d) return false;
+    S.fmt = d.fmt || S.fmt; S.theme = d.theme || S.theme;
+    Object.assign(S.brand, d.brand || {});
+    S.slides = d.slides || [];
+    $('raw').value = d.raw || '';
+    return !!S.slides.length;
+  }catch(e){ return false; }
+}
+function syncBrandInputs(){
+  $('fMark').value = S.brand.mark; $('fRubric').value = S.brand.rubric;
+  $('fHandle').value = S.brand.handle; $('fDate').value = S.brand.date;
+  $('fSource').value = S.brand.source;
+}
+[['fMark','mark'],['fRubric','rubric'],['fHandle','handle'],['fDate','date'],['fSource','source']]
+  .forEach(([id, k]) => $(id).addEventListener('input', () => {
+    S.brand[k] = $(id).value; renderCards(); save();
+  }));
+
+function build(){
+  const want = Math.max(3, Math.min(12, +$('nSlides').value || 8));
+  const sl = buildSlides($('raw').value, want);
+  if (!sl.length){ alert('Вставьте текст новости — из пустого поля собирать нечего.'); return; }
+  S.slides = sl; renderEds(); renderCards(); makeCaption(); save();
+}
+$('bBuild').onclick = build; $('bBuild2').onclick = build;
+$('bAdd').onclick = () => { S.slides.push({kind:'text', title:'', text:'', icon:'none', img:null});
+  renderEds(); renderCards(); save(); };
+$('bZip').onclick = downloadZip;
+$('bCap').onclick = makeCaption;
+$('bCapCopy').onclick = () => { $('capOut').select(); document.execCommand('copy'); };
+$('bSafe').onclick = () => { S.safe = !S.safe; $('bSafe').classList.toggle('on', S.safe); renderCards(); };
+$('bFeed').onclick = () => { S.feed = !S.feed; $('bFeed').classList.toggle('on', S.feed);
+  document.body.classList.toggle('feedmode', S.feed); renderFeed(); };
+$('bAddPhoto').onclick = () => {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true;
+  inp.onchange = () => addFiles(inp.files); inp.click();
+};
+addEventListener('resize', () => {
+  document.querySelectorAll('#cards canvas').forEach(c => c.style.width = PREVIEW_W() + 'px');
+});
+
+const DEMO = `Импорт сахара в Кыргызстан вырос в 2,4 раза за полгода
+За январь–июнь 2026 года страна закупила 118 тыс. тонн сахара и сахарного сиропа — больше, чем за весь 2025 год.
+Основным поставщиком стала Россия: на неё пришлось 71% всего объёма поставок.
+Средняя цена ввоза составила 62 сома за килограмм.
+Собственные заводы закрыли только 29% потребности внутреннего рынка.
+Осенью предприятия начнут переработку урожая сахарной свёклы, тогда станет видно, сократится ли ввоз.`;
+
+(function start(){
+  seg($('segFmt'), FORMATS, 'fmt', () => { renderCards(); });
+  seg($('segTheme'), THEMES, 'theme', () => { renderCards(); });
+  const had = load();
+  syncBrandInputs();
+  if (!had){ $('raw').value = DEMO; S.brand.date = '30 июля 2026'; syncBrandInputs(); build(); }
+  else { renderEds(); renderCards(); makeCaption(); }
+  renderImgs();
+  document.fonts.ready.then(renderCards);      /* первый рендер мог уйти до загрузки Arsenal */
+})();
+</script>
+</body>
+</html>
