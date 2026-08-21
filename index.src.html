@@ -11,11 +11,17 @@
    Всё офлайн: шрифты вшиты, рисование на canvas, экспорт PNG и ZIP локально.
    Один рендер (drawCard) обслуживает и предпросмотр, и экспорт — что видно,
    то и скачается.
+
+   Интерфейс светлый в обоих проектах: фон #F4F5F7, текст #121212.
+   От проекта меняется только акцент — он приходит переменной --ui-acc,
+   поэтому ни одно правило ниже не знает, Tazabek сейчас или Turmush.
    ============================================================================ */
 :root{
-  --ui-bg:#111214; --ui-panel:#191B1E; --ui-line:#2A2D31; --ui-ink:#EDEEF0;
-  --ui-mute:#9BA1A8; --ui-acc:#9a2d25; --ui-acc2:#E4564A;
+  --ui-bg:#F4F5F7; --ui-panel:#FFFFFF; --ui-line:#DEE1E6; --ui-ink:#121212;
+  --ui-mute:#5A6068; --ui-field:#FFFFFF; --ui-hover:#ECEEF1;
+  --ui-acc:#9a2d25; --ui-tint:#F7E9E7;
 }
+body.proj-turmush{ --ui-acc:#7952B3; --ui-tint:#F1DDFF; }
 *{box-sizing:border-box; margin:0; padding:0}
 html,body{height:100%}
 body{
@@ -31,34 +37,36 @@ header{
   border-bottom:1px solid var(--ui-line); background:var(--ui-panel); flex-wrap:wrap;
 }
 header h1{font-size:20px; font-weight:700; letter-spacing:-.01em; white-space:nowrap}
-header h1 b{color:var(--ui-acc2)}
+header h1 b{color:var(--ui-acc)}
 .sp{flex:1}
 .btn{
-  background:#23262A; border:1px solid var(--ui-line); border-radius:10px; padding:9px 14px;
+  background:var(--ui-panel); border:1px solid var(--ui-line); border-radius:10px; padding:9px 14px;
   white-space:nowrap;
 }
-.btn:hover{background:#2C3035}
-.btn.acc{background:var(--ui-acc); border-color:#B3382E}
-.btn.acc:hover{background:#B3382E}
+.btn:hover{background:var(--ui-hover)}
+.btn.acc{background:var(--ui-acc); border-color:var(--ui-acc); color:#fff}
+.btn.acc:hover{filter:brightness(1.12)}
 .btn.ghost{background:transparent}
 .btn[disabled]{opacity:.55; cursor:default}
-.btn.on{border-color:var(--ui-acc2); color:#fff; background:#2E1D1B}
+.btn.on{border-color:var(--ui-acc); color:var(--ui-acc); background:var(--ui-tint)}
 .seg{display:flex; border:1px solid var(--ui-line); border-radius:10px; overflow:hidden}
-.seg button{background:#1E2124; border:0; padding:9px 12px; border-right:1px solid var(--ui-line)}
+.seg button{background:var(--ui-panel); border:0; padding:9px 12px; border-right:1px solid var(--ui-line)}
 .seg button:last-child{border-right:0}
+.seg button:hover{background:var(--ui-hover)}
 .seg button.on{background:var(--ui-acc); color:#fff}
 label.fld{display:flex; flex-direction:column; gap:5px; font-size:13px; color:var(--ui-mute)}
 label.fld input, label.fld select{
-  background:#15171A; border:1px solid var(--ui-line); border-radius:8px; padding:8px 10px; min-width:0;
+  background:var(--ui-field); border:1px solid var(--ui-line); border-radius:8px; padding:8px 10px; min-width:0;
 }
 
 /* ---------- рабочая область ---------- */
 main{flex:1; min-height:0; display:grid; grid-template-columns:minmax(340px,420px) minmax(0,1fr)}
-#left{border-right:1px solid var(--ui-line); overflow:auto; padding:16px; display:flex; flex-direction:column; gap:14px}
-#right{overflow:auto; padding:22px; background:#0D0E10}
+#left{border-right:1px solid var(--ui-line); overflow:auto; padding:16px; display:flex; flex-direction:column;
+      gap:14px; background:var(--ui-panel)}
+#right{overflow:auto; padding:22px; background:var(--ui-bg)}
 
 textarea#raw{
-  width:100%; min-height:190px; resize:vertical; background:#15171A; border:1px solid var(--ui-line);
+  width:100%; min-height:190px; resize:vertical; background:var(--ui-field); border:1px solid var(--ui-line);
   border-radius:12px; padding:12px; line-height:1.45;
 }
 .hint{font-size:13px; color:var(--ui-mute); line-height:1.45}
@@ -66,43 +74,53 @@ textarea#raw{
 .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
 h3.sec{font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var(--ui-mute); font-weight:700;
        margin-top:6px; border-top:1px solid var(--ui-line); padding-top:12px}
+/* label.fld{display:flex} специфичнее одного класса, поэтому прячем с тем же весом */
+label.fld.only-turmush{display:none}
+body.proj-turmush label.fld.only-turmush{display:flex}
 
 /* ---------- редактор слайдов ---------- */
-.slide-ed{border:1px solid var(--ui-line); border-radius:12px; background:#15171A; overflow:hidden}
-.slide-ed > .hd{display:flex; align-items:center; gap:8px; padding:8px 10px; background:#1B1E22; font-size:13px}
+.slide-ed{border:1px solid var(--ui-line); border-radius:12px; background:var(--ui-panel); overflow:hidden}
+.slide-ed > .hd{display:flex; align-items:center; gap:8px; padding:8px 10px; background:#F7F8FA; font-size:13px;
+                border-bottom:1px solid var(--ui-line)}
 .slide-ed > .hd .n{
   width:24px; height:24px; border-radius:7px; background:var(--ui-acc); color:#fff;
   display:grid; place-items:center; font-size:12px; font-weight:700; flex:0 0 auto;
 }
-.slide-ed > .hd select{background:#15171A; border:1px solid var(--ui-line); border-radius:7px; padding:4px 6px; font-size:12px}
-.slide-ed > .hd .ic{background:transparent; border:1px solid var(--ui-line); border-radius:7px; padding:3px 7px; font-size:12px}
+.slide-ed > .hd select{background:var(--ui-field); border:1px solid var(--ui-line); border-radius:7px;
+                       padding:4px 6px; font-size:12px}
+.slide-ed > .hd .ic{background:transparent; border:1px solid var(--ui-line); border-radius:7px;
+                    padding:3px 7px; font-size:12px}
+.slide-ed > .hd .ic:hover{background:var(--ui-hover)}
 .slide-ed > .bd{padding:10px; display:flex; flex-direction:column; gap:8px}
 .slide-ed textarea, .slide-ed input{
-  width:100%; background:#101215; border:1px solid var(--ui-line); border-radius:8px; padding:8px 10px;
+  width:100%; background:var(--ui-field); border:1px solid var(--ui-line); border-radius:8px; padding:8px 10px;
   line-height:1.4; font-size:14px;
 }
 .slide-ed textarea{resize:vertical; min-height:56px}
 .slide-ed .lbl{font-size:12px; color:var(--ui-mute)}
 .chips{display:flex; gap:6px; flex-wrap:wrap}
 .chip{
-  background:#101215; border:1px solid var(--ui-line); border-radius:8px; padding:5px 8px; font-size:12px;
+  background:var(--ui-field); border:1px solid var(--ui-line); border-radius:8px; padding:5px 8px; font-size:12px;
   display:flex; align-items:center; gap:6px;
 }
-.chip.on{border-color:var(--ui-acc2); background:#2A1B1A}
+.chip:hover{background:var(--ui-hover)}
+.chip.on{border-color:var(--ui-acc); background:var(--ui-tint); color:var(--ui-acc)}
 .chip svg{width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2}
-.warn{color:#FFB4A8; font-size:12px}
+.warn{color:#B3261E; font-size:12px}
 
 /* ---------- превью ---------- */
 #cards{display:flex; flex-wrap:wrap; gap:22px; align-items:flex-start}
 .cardbox{position:relative}
 .cardbox canvas{
-  display:block; border-radius:6px; background:#fff; box-shadow:0 18px 44px rgba(0,0,0,.5); cursor:grab;
+  display:block; border-radius:6px; background:#fff; box-shadow:0 10px 30px rgba(18,18,18,.16); cursor:grab;
 }
 .cardbox.dragging canvas{cursor:grabbing}
 .cardbox .bar{display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:var(--ui-mute)}
-.cardbox .bar button{background:#1E2124; border:1px solid var(--ui-line); border-radius:8px; padding:5px 9px; font-size:12px}
+.cardbox .bar button{background:var(--ui-panel); border:1px solid var(--ui-line); border-radius:8px;
+                     padding:5px 9px; font-size:12px}
+.cardbox .bar button:hover{background:var(--ui-hover)}
 .cardbox .over{
-  position:absolute; left:8px; top:8px; background:rgba(200,40,30,.92); color:#fff; font-size:12px;
+  position:absolute; left:8px; top:8px; background:rgba(179,38,30,.95); color:#fff; font-size:12px;
   padding:4px 8px; border-radius:6px;
 }
 
@@ -110,9 +128,35 @@ h3.sec{font-size:13px; letter-spacing:.12em; text-transform:uppercase; color:var
 #feed{display:none; grid-template-columns:repeat(3, 1fr); gap:4px; max-width:420px; margin:0 auto}
 body.feedmode #cards{display:none}
 body.feedmode #feed{display:grid}
-#feed canvas{width:100%; display:block; background:#222}
+#feed canvas{width:100%; display:block; background:#E3E5E9}
 #feednote{display:none; max-width:420px; margin:14px auto 0; font-size:13px; color:var(--ui-mute); line-height:1.5}
 body.feedmode #feednote{display:block}
+
+/* ---------- выбор проекта на входе ---------- */
+#pick{position:fixed; inset:0; z-index:120; background:var(--ui-bg); display:none; place-items:center;
+      padding:24px; overflow:auto}
+body.picking #pick{display:grid}
+.pickbox{max-width:820px; width:100%; text-align:center}
+.pickbox h2{font-size:30px; font-weight:700; letter-spacing:-.01em}
+.picksub{margin:10px auto 26px; max-width:560px; color:var(--ui-mute); font-size:15px; line-height:1.5}
+.pickrow{display:grid; grid-template-columns:repeat(auto-fit, minmax(258px, 1fr)); gap:18px}
+.pcard{
+  background:var(--ui-panel); border:1px solid var(--ui-line); border-radius:18px; padding:0 0 18px;
+  overflow:hidden; display:flex; flex-direction:column; gap:12px; text-align:left;
+  box-shadow:0 8px 26px rgba(18,18,18,.07); transition:box-shadow .15s, border-color .15s, transform .15s;
+}
+.pcard:hover{border-color:var(--ui-ink); box-shadow:0 14px 36px rgba(18,18,18,.14); transform:translateY(-2px)}
+.pcard .plogo{background:#121212; padding:30px 26px; display:grid; place-items:center}
+.pcard .plogo img{width:100%; max-width:210px; height:auto; display:block}
+.pcard .pname{font-size:21px; font-weight:700; padding:0 20px}
+.pcard .pabout{font-size:14px; color:var(--ui-mute); line-height:1.5; padding:0 20px}
+.pcard .pdots{display:flex; gap:8px; padding:0 20px}
+.pcard .pdots i{width:26px; height:26px; border-radius:9px; border:1px solid rgba(18,18,18,.10)}
+.pcard .pgo{
+  margin:2px 20px 0; padding:10px 14px; border-radius:10px; text-align:center; font-weight:700;
+  background:var(--pc-acc); color:#fff;
+}
+.pcard.cur .pgo{background:transparent; color:var(--pc-acc); border:1px solid var(--pc-acc)}
 
 /* ---------- мобильная раскладка: целевая ширина 390 ---------- */
 @media (max-width: 900px){
@@ -123,10 +167,11 @@ body.feedmode #feednote{display:block}
   #right{padding:12px}
   #cards{gap:14px; justify-content:center}
   .btn, .seg button{padding:8px 11px}
+  .pickbox h2{font-size:24px}
 }
 #drop{
-  position:fixed; inset:0; background:rgba(10,10,12,.86); display:none; place-items:center; z-index:99;
-  font-size:22px; border:4px dashed var(--ui-acc2);
+  position:fixed; inset:0; background:rgba(244,245,247,.92); display:none; place-items:center; z-index:99;
+  font-size:22px; border:4px dashed var(--ui-acc); color:var(--ui-ink);
 }
 #drop.on{display:grid}
 </style>
@@ -135,6 +180,7 @@ body.feedmode #feednote{display:block}
 
 <header>
   <h1>post·<b>insta</b> — текст в карточки</h1>
+  <button class="btn ghost" id="bProj" title="сменить проект">проект</button>
   <div class="seg" id="segFmt"></div>
   <div class="seg" id="segTheme"></div>
   <button class="btn ghost" id="bSafe" title="показать зоны, которые обрезает или закрывает Instagram">safe-zone</button>
@@ -170,6 +216,7 @@ body.feedmode #feednote{display:block}
       <label class="fld">дата / надзаголовок<input id="fDate" value=""></label>
     </div>
     <label class="fld">источник (виден на каждом слайде)<input id="fSource" value="Источник: "></label>
+    <label class="fld only-turmush">строка под заставкой<input id="fFoot" value="АКЫРКЫ ЖАҢЫЛЫКТАР WWW.TURMUSH.KG САЙТЫНДА"></label>
 
     <h3 class="sec">слайды</h3>
     <div id="eds" style="display:flex; flex-direction:column; gap:10px"></div>
@@ -179,7 +226,7 @@ body.feedmode #feednote{display:block}
       Фото привязывается к слайду в его редакторе, кроп — перетаскиванием прямо по карточке.</span></div>
 
     <h3 class="sec">подпись к посту</h3>
-    <textarea id="capOut" style="width:100%; min-height:130px; background:#15171A; border:1px solid var(--ui-line); border-radius:12px; padding:12px; line-height:1.45" readonly></textarea>
+    <textarea id="capOut" style="width:100%; min-height:130px; background:var(--ui-field); border:1px solid var(--ui-line); border-radius:12px; padding:12px; line-height:1.45" readonly></textarea>
     <div class="row">
       <button class="btn" id="bCap">сгенерировать подпись</button>
       <button class="btn" id="bCapCopy">копировать</button>
@@ -197,6 +244,14 @@ body.feedmode #feednote{display:block}
   </div>
 </main>
 
+<div id="pick">
+  <div class="pickbox">
+    <h2>С каким проектом работаем</h2>
+    <p class="picksub">Проект задаёт логотип, палитру карточек и оформление обложки.
+      Сменить можно в любой момент — кнопкой «проект» в шапке.</p>
+    <div class="pickrow" id="pickRow"></div>
+  </div>
+</div>
 <div id="drop">отпустите файлы — добавлю как фото</div>
 
 <script>
@@ -209,10 +264,16 @@ const FORMATS = {
   '1x1':  {w:1080, h:1080, t:'1:1'},
   '9x16': {w:1080, h:1920, t:'9:16'}
 };
+/* Темы принадлежат проекту: переключатель тем показывает только свои.
+   Значения акцентов подобраны под контраст ≥4,5:1 к фону своей темы —
+   на тёмном фоне фирменный #7952B3 даёт 3,4:1, поэтому там он светлее. */
 const THEMES = {
-  tazabek:{t:'светлая', bg:'#F4F5F7', ink:'#121212', mute:'#5A5F66', accent:'#9a2d25', line:'rgba(18,18,18,.14)', chip:'#FFFFFF', shade:'rgba(18,18,18,.07)'},
-  noir:   {t:'тёмная',  bg:'#121212', ink:'#F4F5F7', mute:'#A2A7AE', accent:'#E4564A', line:'rgba(244,245,247,.20)', chip:'#1D1D1D', shade:'rgba(244,245,247,.09)'},
-  paper:  {t:'бумага',  bg:'#F0EEE6', ink:'#141413', mute:'#6B6862', accent:'#C25A34', line:'rgba(20,20,19,.16)', chip:'#FBFAF6', shade:'rgba(20,20,19,.06)'}
+  tazabek:{proj:'tazabek', t:'светлая', bg:'#F4F5F7', ink:'#121212', mute:'#5A5F66', accent:'#9a2d25', line:'rgba(18,18,18,.14)', chip:'#FFFFFF', shade:'rgba(18,18,18,.07)'},
+  noir:   {proj:'tazabek', t:'тёмная',  bg:'#121212', ink:'#F4F5F7', mute:'#A2A7AE', accent:'#E4564A', line:'rgba(244,245,247,.20)', chip:'#1D1D1D', shade:'rgba(244,245,247,.09)'},
+  paper:  {proj:'tazabek', t:'бумага',  bg:'#F0EEE6', ink:'#141413', mute:'#6B6862', accent:'#C25A34', line:'rgba(20,20,19,.16)', chip:'#FBFAF6', shade:'rgba(20,20,19,.06)'},
+  turmush:      {proj:'turmush', t:'светлая', bg:'#FBF8FE', ink:'#1A1226', mute:'#5D5470', accent:'#7952B3', line:'rgba(26,18,38,.14)', chip:'#FFFFFF', shade:'#F1DDFF'},
+  turmush_lilac:{proj:'turmush', t:'сирень',  bg:'#F1DDFF', ink:'#1A1226', mute:'#5A4A73', accent:'#5E3D93', line:'rgba(26,18,38,.16)', chip:'#FCF7FF', shade:'rgba(94,61,147,.13)'},
+  turmush_dark: {proj:'turmush', t:'тёмная',  bg:'#171223', ink:'#F4F0FA', mute:'#A79CB8', accent:'#BFA3E8', line:'rgba(244,240,250,.20)', chip:'#221A33', shade:'rgba(241,221,255,.10)'}
 };
 /* Иконки нарисованы здесь же — ни одной сторонней лицензии.
    Путь в системе координат 24×24, рисуется через Path2D. */
@@ -244,17 +305,64 @@ const KINDS = {
 };
 const PAD = 88;
 
+/* Логотипы вшиты как base64-SVG: и экран выбора проекта, и заставка рисуют один
+   и тот же файл. Перекраска — подменой fill прямо в исходнике, копий логотипа
+   в разных цветах не держим. fill="none" не трогаем: на нём держатся клипы. */
+const LOGO_B64 = {
+  tazabek:'PHN2ZyB3aWR0aD0iMTU2OSIgaGVpZ2h0PSIzNDUiIHZpZXdCb3g9IjAgMCAxNTY5IDM0NSIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgY2xpcC1wYXRoPSJ1cmwoI2NsaXAwXzE0NzlfMTMpIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xNDQgMTA5QzE0NCAxOTcuODQgMTQ0IDMzOSAxNDQgMzM5SDE5NVYxMDlDMjAzLjQgODMuMzEgMjE2LjU0IDc2LjA4IDI0MiA3NUMyNjYuOTMgNzQuMzkgMjg0LjcgOTAuNDIgMjkyIDEwOUgzMzlDMzMyLjE3IDg3LjI2IDMyNi4yNCA3NS43NiAzMDEuNSA1OUMyNjUuODcgMzcuOTUgMjQ1LjQ2IDM2LjA4IDIwOC41IDQ1LjVMMTY5LjUgMEwxMzAuNSA0NS41QzkzLjU0IDM2LjA4IDczLjEzIDM3Ljk1IDM3LjUgNTlDMTIuNzYgNzUuNzYgNi44MyA4Ny4yNiAwIDEwOUg0N0M1NC4zIDkwLjQyIDcyLjA3IDc0LjM5IDk3IDc1QzEyMi40NiA3Ni4wOCAxMzUuNiA4My4zMSAxNDQgMTA5WiIgZmlsbD0iIzlBMzMyQyIvPgo8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTM4MS41IDEzNEMzMjQuMDYgMTM0IDI3Ny41IDE4MS4yMyAyNzcuNSAyMzkuNUMyNzcuNSAyOTcuNzcgMzI0LjA2IDM0NSAzODEuNSAzNDVDNDA0LjA3IDM0NSA0MjQuOTYgMzM3LjcxIDQ0MiAzMjUuMzJWMzM5SDQ4NS41VjIzOS41QzQ4NS41IDE4MS4yMyA0MzguOTQgMTM0IDM4MS41IDEzNFpNMzgxLjUgMzAxQzM0Ny44MSAzMDEgMzIwLjUgMjczLjY5IDMyMC41IDI0MEMzMjAuNSAyMDYuMzEgMzQ3LjgxIDE3OSAzODEuNSAxNzlDNDE1LjE5IDE3OSA0NDIuNSAyMDYuMzEgNDQyLjUgMjQwQzQ0Mi41IDI3My42OSA0MTUuMTkgMzAxIDM4MS41IDMwMVoiIGZpbGw9IiM5QTMzMkMiLz4KPHBhdGggZD0iTTY1NCAzMzlINTE2LjVWMjkzTDYwMCAxODMuNUg1MTlWMTQwLjVINjQ5LjVWMTg4LjVMNTY1LjUgMjk2SDY1NFYzMzlaIiBmaWxsPSIjOUEzMzJDIi8+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNNzg0LjUgMTM0QzcyNy4wNiAxMzQgNjgwLjUgMTgxLjIzIDY4MC41IDIzOS41QzY4MC41IDI5Ny43NyA3MjcuMDYgMzQ1IDc4NC41IDM0NUM4MDcuMDcgMzQ1IDgyNy45NiAzMzcuNzEgODQ1IDMyNS4zMlYzMzlIODg4LjVWMjM5LjVDODg4LjUgMTgxLjIzIDg0MS45NCAxMzQgNzg0LjUgMTM0Wk03ODQuNSAzMDFDNzUwLjgxIDMwMSA3MjMuNSAyNzMuNjkgNzIzLjUgMjQwQzcyMy41IDIwNi4zMSA3NTAuODEgMTc5IDc4NC41IDE3OUM4MTguMTkgMTc5IDg0NS41IDIwNi4zMSA4NDUuNSAyNDBDODQ1LjUgMjczLjY5IDgxOC4xOSAzMDEgNzg0LjUgMzAxWiIgZmlsbD0iIzlBMzMyQyIvPgo8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTEwMjMuNSAxMzRDMTAwMC45MyAxMzQgOTgwLjA0IDE0MS4yOSA5NjMgMTUzLjY4Vjc2LjVIOTE5LjVWMjM5LjVDOTE5LjUgMjk3Ljc3IDk2Ni4wNiAzNDUgMTAyMy41IDM0NUMxMDgwLjk0IDM0NSAxMTI3LjUgMjk3Ljc3IDExMjcuNSAyMzkuNUMxMTI3LjUgMTgxLjIzIDEwODAuOTQgMTM0IDEwMjMuNSAxMzRaTTEwMjMuNSAzMDFDOTg5LjgxIDMwMSA5NjIuNSAyNzMuNjkgOTYyLjUgMjQwQzk2Mi41IDIwNi4zMSA5ODkuODEgMTc5IDEwMjMuNSAxNzlDMTA1Ny4xOSAxNzkgMTA4NC41IDIwNi4zMSAxMDg0LjUgMjQwQzEwODQuNSAyNzMuNjkgMTA1Ny4xOSAzMDEgMTAyMy41IDMwMVoiIGZpbGw9IiM5QTMzMkMiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMjAyIDE1My42OEMxMTc1LjY2IDE3Mi44MiAxMTU4LjUgMjA0LjEzIDExNTguNSAyMzkuNUMxMTU4LjUgMjk3Ljc3IDEyMDUuMDYgMzQ1IDEyNjIuNSAzNDVDMTMwNy41MSAzNDUgMTM0NS44NCAzMTYgMTM2MC4zMiAyNzUuNDFIMTMwOUMxMjk5Ljk0IDI4Ny40IDEyODMuOTggMjk5LjUgMTI2Mi41IDI5OS41QzEyMjcgMjk5LjUgMTIwOC41IDI2NSAxMjA4LjUgMjU1SDEzNjUuMzlDMTM2Ni4xMiAyNDkuOTQgMTM2Ni41IDI0NC43NyAxMzY2LjUgMjM5LjVDMTM2Ni41IDE4MS4yMyAxMzE5Ljk0IDEzNCAxMjYyLjUgMTM0QzEyMzkuOTMgMTM0IDEyMTkuMDQgMTQxLjI5IDEyMDIgMTUzLjY4Wk0xMzE2LjUgMjE5LjVIMTIwNy41QzEyMDYgMjA5IDEyMjYuNSAxNzUgMTI2Mi41IDE3NUMxMjk4LjUgMTc1IDEzMTYuNSAyMDkuNSAxMzE2LjUgMjE5LjVaIiBmaWxsPSIjOUEzMzJDIi8+CjxwYXRoIGQ9Ik0xMzk1LjUgNzcuNUgxNDM5VjIzM0wxNTA1LjUgMTQxSDE1NTQuNUwxNDg3IDIzM0wxNTY5IDMzOUgxNTEyLjVMMTQzOSAyMzNWMzM5SDEzOTUuNVY3Ny41WiIgZmlsbD0iIzlBMzMyQyIvPgo8L2c+CjxkZWZzPgo8Y2xpcFBhdGggaWQ9ImNsaXAwXzE0NzlfMTMiPgo8cmVjdCB3aWR0aD0iMTU2OSIgaGVpZ2h0PSIzNDUiIGZpbGw9IndoaXRlIi8+CjwvY2xpcFBhdGg+CjwvZGVmcz4KPC9zdmc+Cg==',
+  turmush:'PHN2ZyB3aWR0aD0iMTI3MSIgaGVpZ2h0PSIyNzciIHZpZXdCb3g9IjAgMCAxMjcxIDI3NyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgaWQ9InR1cm11c2hfbG9nbyAxIiBjbGlwLXBhdGg9InVybCgjY2xpcDBfMTQ3OV8yKSI+CjxwYXRoIGlkPSJWZWN0b3IiIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMjY4LjczNCA1LjI1MDA1TDI2Mi45NTEgMTAuNDc2TDI2NS4wMTYgMTcuOTc2QzI3Ni4xNzQgNTguNDk4IDMwNi45NjQgODguMjYxIDM0Ni4yODEgOTYuNTMxQzM2MC44MTMgOTkuNTg4IDM4Ni4wOCA5OC4wMDMgNDAwLjAzOSA5My4xNTdDNDIzLjU2NiA4NC45OTEgNDQ1LjI5NiA2NS40NzcxIDQ1NS45NTYgNDIuOTQyMUM0NTcuNjM5IDM5LjM4NjEgNDU5LjAxNiAzNS45NDUxIDQ1OS4wMTYgMzUuMjk2MUM0NTkuMDE3IDM0LjE5MDEgNDQwLjQ2MSAxNi4zMTYxIDQzOC43MTYgMTUuNzQwMUM0MzguMjc1IDE1LjU5NTEgNDM2Ljg1MyAxOC4wODcgNDM1LjU1NiAyMS4yNzhDNDMxLjY0NiAzMC45IDQyNi45MSAzNy43ODQgNDE5LjAxNyA0NS4zMjNDNDA2LjY2MiA1Ny4xMjUgMzk0LjI0NSA2Mi40MTQgMzcyLjcyNCA2NS4wNDRDMzUxLjkwMSA2Ny41ODkgMzI5LjkwNCA2Mi4wOTgxIDMxMS44MyA0OS44NDMxQzI5NS4xNzEgMzguNTQ3MSAyODIuNDcyIDIyLjI4OCAyNzcuMzc1IDUuNzI2MDVDMjc2LjQwMiAyLjU2NDA1IDI3NS4zNjEgLTAuMDEyOTUxIDI3NS4wNjEgNC44OTY5N2UtMDVDMjc0Ljc2MiAwLjAxNDA0OSAyNzEuOTE1IDIuMzc2MDUgMjY4LjczNCA1LjI1MDA1Wk02My4xNjkgMTAyLjQyNUwwIDE2NS44NzVMMC4yNTc5OTYgMjE5LjY3NUwwLjUxNjk5OCAyNzMuNDc2TDE3LjI2NyAyNzMuNzVMMzQuMDE3IDI3NC4wMjRMMzQuMDM3IDIxOS43NUwzNC4wNTggMTY1LjQ3Nkw5NS45OSAxMDIuOTc2QzEzMC4wNTMgNjguNjAxIDE1Ny45NDQgNDAuMTM5IDE1Ny45NyAzOS43MjZDMTU3Ljk5NiAzOS4zMTQgMTUwLjg5IDM4Ljk3NiAxNDIuMTc4IDM4Ljk3NkgxMjYuMzM5TDYzLjE2OSAxMDIuNDI1Wk0xMDQuNTc1IDEwMy43MjZMNDIuMDU2IDE2Ni40NzZMNDIuMDM2IDIyMC4yMjZMNDIuMDE3IDI3My45NzZINTkuMDE3SDc2LjAxN1YyMTkuNzU2VjE2NS41MzdMMTMwLjIwMyAxMTEuMjlMMTg0LjM4OCA1Ny4wNDRMMTgyLjQ1MyA1NC44MTcxQzE3OC40NDggNTAuMjExMSAxNjguNzcxIDQwLjk3NiAxNjcuOTUgNDAuOTc2QzE2Ny40OCA0MC45NzYgMTM4Ljk2MSA2OS4yMTQgMTA0LjU3NSAxMDMuNzI2Wk0xMzUuNjM0IDExNS4wMTlMODIuOTk5IDE2OC4wNjFMODMuMjU4IDIyMC43NjlMODMuNTE3IDI3My40NzZIMTAwLjUxN0gxMTcuNTE3TDExOC4wMTcgMjE5Ljg0MkwxMTguNTE3IDE2Ni4yMDhMMTYxLjE2MSAxMjIuODQyQzE4NC42MTYgOTguOTkxIDIwNC4xNjcgNzkuMTI1IDIwNC42MDggNzguNjk2QzIwNS4zNTUgNzcuOTcgMTkwLjM0NCA2MS45NzYgMTg4LjkxNyA2MS45NzZDMTg4LjU2MSA2MS45NzYgMTY0LjU4NCA4NS44NDUgMTM1LjYzNCAxMTUuMDE5Wk0xNjcuMjM4IDEyNS44OTNMMTI1LjAxNyAxNjguODExVjIyMS4zOTNWMjczLjk3NkgxNDIuMDE3SDE1OS4wMTdMMTU5LjA0NyAyMjAuNzI2TDE1OS4wNzcgMTY3LjQ3NkwxNzAuMTYyIDE1NS45NzZDMTc2LjI1OCAxNDkuNjUxIDE5MS40MjUgMTM0LjI0MiAyMDMuODY2IDEyMS43MzRMMjI2LjQ4NSA5OC45OTExTDIxOC41MjUgOTAuOTg0QzIxNC4xNDYgODYuNTc5IDIxMC4zMTUgODIuOTc2IDIxMC4wMTEgODIuOTc2QzIwOS43MDcgODIuOTc2IDE5MC40NTkgMTAyLjI4OSAxNjcuMjM4IDEyNS44OTNaTTExNDUuMDIgMTgyLjQ1MVYyNzIuOTc2TDExNTIuNzcgMjczLjAzNkMxMTU3LjAzIDI3My4wNjkgMTE2Mi43NyAyNzMuMzIgMTE2NS41MiAyNzMuNTk0QzExNjguMjcgMjczLjg2NyAxMTcxLjk4IDI3My44MiAxMTczLjc3IDI3My40ODhMMTE3Ny4wMiAyNzIuODg1VjIxNy40MzFWMTYxLjk3NkwxMTg1LjI3IDE2MS45ODhDMTIwOC43MSAxNjIuMDIyIDEyMjMuMTIgMTczLjA4MyAxMjMwLjg0IDE5Ni45NzZDMTIzNS41NiAyMTEuNjE1IDEyMzcuMTIgMjIzLjMxMiAxMjM3LjczIDI0OC43MjZDMTIzOC4xMyAyNjUuMjgyIDEyMzguNjcgMjcyLjk5NCAxMjM5LjQyIDI3My4wMzFDMTI0Mi4xNCAyNzMuMTY4IDEyNTYuMiAyNzMuMjA3IDEyNjIuOTIgMjczLjA5N0wxMjcwLjMyIDI3Mi45NzZMMTI2OS43IDI0OC4yMjZDMTI2OS4wNSAyMjEuODE2IDEyNjcuNjUgMjA5LjgyNSAxMjYzLjU0IDE5NS42NjZDMTI1Ni4zNiAxNzAuODg0IDEyNDMuODggMTU0LjQ3NyAxMjIzLjk3IDE0My42NTJDMTIxMy40NCAxMzcuOTI2IDExOTYuNzUgMTMzLjk3NiAxMTgzLjEgMTMzLjk3NkgxMTc3LjA2TDExNzYuNzkgMTEzLjIyNkwxMTc2LjUyIDkyLjQ3NkwxMTYwLjc3IDkyLjIwMUwxMTQ1LjAyIDkxLjkyNVYxODIuNDUxWk0xOTkuMjUyIDEzNi4yNDFMMTY3LjAxNyAxNjguNDg3VjIyMS4yMzJWMjczLjk3NkgxODQuMDE3SDIwMS4wMTdWMjIwLjMwNlYxNjYuNjM2TDIyMy41MTcgMTQzLjg4OUMyMzUuODkyIDEzMS4zNzcgMjQ2LjAxNyAxMjAuNTMgMjQ2LjAxNyAxMTkuNzgzQzI0Ni4wMTcgMTE5LjAzNyAyNDIuNzQ4IDExNS4xNzkgMjM4Ljc1MiAxMTEuMjFMMjMxLjQ4OCAxMDMuOTk0TDE5OS4yNTIgMTM2LjI0MVpNMzQ3LjAxNyAxOTMuNDMxVjI3Mi44ODVMMzUwLjI2NyAyNzMuNDc5QzM1Mi4wNTUgMjczLjgwNSAzNTkuMTQyIDI3My45MzggMzY2LjAxNyAyNzMuNzc0TDM3OC41MTcgMjczLjQ3NkwzNzguNzczIDE5My43MjZMMzc5LjAyOSAxMTMuOTc2SDM2My4wMjNIMzQ3LjAxN1YxOTMuNDMxWk0yMjkuNjc1IDE0Ny4wNjdMMjA4LjE1IDE2OS4xNThMMjA4LjU4NiAyMTQuMzE3QzIwOC44MjUgMjM5LjE1NSAyMDkuMDIgMjYyLjczOCAyMDkuMDE5IDI2Ni43MjZMMjA5LjAxNyAyNzMuOTc2SDIyNi4wMTdIMjQzLjAxN1YyMjAuMjRWMTY2LjUwNEwyNTUuNDkgMTUzLjk5TDI2Ny45NjMgMTQxLjQ3NkwyNjAuMjA1IDEzMy4yMjZDMjU1LjkzOSAxMjguNjg4IDI1Mi4xNjcgMTI0Ljk3NiAyNTEuODI0IDEyNC45NzZDMjUxLjQ4MSAxMjQuOTc2IDI0MS41MTQgMTM0LjkxNyAyMjkuNjc1IDE0Ny4wNjdaTTQxNy4wMTcgMTUxLjgwMkM0MTcuMDE3IDE3OC4wMDkgNDE5LjQ1MyAxOTkuMzczIDQyNC4yMTggMjE0Ljk1NkM0MzIuNjc3IDI0Mi42MiA0NTMuNTE4IDI2My4yOTYgNDc5LjUxNyAyNjkuODE1QzQ4OS45NTMgMjcyLjQzMiA1MDcuOTI0IDI3My45NzYgNTI3LjkzOSAyNzMuOTc2SDU0NC4wMTdWMjAzLjk3NlYxMzMuOTc2SDUyOC4wMTdINTEyLjAxN1YxODkuOTc2VjI0NS45NzZMNTA2LjI2NyAyNDUuOTU5QzQ4Ny42OTUgMjQ1LjkwMyA0NjkuMTU3IDIzNi41NzYgNDYxLjQyMSAyMjMuMzk2QzQ1OC42MjcgMjE4LjYzNiA0NTUuNDk1IDIwOS45NjQgNDUzLjUwNCAyMDEuNDc2QzQ1MS42NTQgMTkzLjU5MSA0NDkuMDE5IDE2Ni45NzEgNDQ5LjAxIDE1Ni4wODZDNDQ5LjAwNiAxNTEuMzUgNDQ4LjcxNiAxNDQuNDM4IDQ0OC4zNjUgMTQwLjcyNkw0NDcuNzI4IDEzMy45NzZINDMyLjM3Mkg0MTcuMDE3VjE1MS44MDJaTTYyMC4wMTcgMTM1LjU3NUM1OTkuMzg2IDE0MC4wMTEgNTgyLjgwNSAxNTUuNTk1IDU3NC45MDYgMTc3Ljk3NkM1NzIuNjcgMTg0LjMwOSA1NzIuNjAyIDE4NS42MTIgNTcyLjI0OSAyMjguNzUyTDU3MS44ODYgMjczLjAyN0w1ODcuNzAyIDI3Mi43NTJMNjAzLjUxNyAyNzIuNDc2TDYwNC4wMTcgMjI4LjQ3NkM2MDQuNDk4IDE4Ni4xODggNjA0LjYwMiAxODQuMjY5IDYwNi42OTMgMTc5LjE2N0M2MDkuODk3IDE3MS4zNTEgNjEzLjMwOCAxNjcuNDcxIDYxOS43NTkgMTY0LjMwNEM2MjQuODEyIDE2MS44MjIgNjI2LjU1OCAxNjEuNDkyIDYzNC4wMTcgMTYxLjYwOEM2NDIuMDIgMTYxLjczMyA2NDYuNTE4IDE2Mi44NjMgNjU3LjMxMiAxNjcuNDZDNjU4Ljk5MiAxNjguMTc2IDY1OS4wNjQgMTY3LjYyMSA2NTguNDM3IDE1OC44NUM2NTguMDY4IDE1My42OTQgNjU3LjQ4NSAxNDYuNzc2IDY1Ny4xNDIgMTQzLjQ3Nkw2NTYuNTE3IDEzNy40NzZMNjUwLjAxNyAxMzUuNzk0QzY0Mi4xNCAxMzMuNzU2IDYyOC45MjMgMTMzLjY1OSA2MjAuMDE3IDEzNS41NzVaTTc0Mi4wMTcgMTM1LjUwNkM3MDEuNTg0IDE0MS4xNDEgNjc5LjA0OSAxNjQuMzk2IDY2OC44ODYgMjEwLjk3NkM2NjcuMTk0IDIxOC43MyA2NjYuNzE4IDIyNS4yNzIgNjY2LjMgMjQ2LjU2N0w2NjUuNzg3IDI3Mi42NTdMNjc5Ljc5NiAyNzMuMzI2QzY4Ny41MDEgMjczLjY5NCA2OTQuNTI4IDI3My43MTcgNjk1LjQxMSAyNzMuMzc4QzY5Ni43NzcgMjcyLjg1NCA2OTcuMDE3IDI3MC43MjMgNjk3LjAxOCAyNTkuMTE5QzY5Ny4wMTkgMjQzLjc4OCA2OTguMzY0IDIyNy4xNiA3MDAuNTA4IDIxNS45NzZDNzA2LjU3NCAxODQuMzM5IDcxNy43NjUgMTY5LjEyIDczOS4xNDggMTYzLjQyOUM3NDkuMDA5IDE2MC44MDQgNzQ3Ljk2NiAxNTQuNTg4IDc0OC4yNTkgMjE3LjcyNkw3NDguNTE3IDI3My40NzZMNzYzLjk0MSAyNzMuNzUzQzc3NS42MTEgMjczLjk2MyA3NzkuNTYzIDI3My43MTkgNzgwLjE3NiAyNzIuNzUzQzc4MC42MjIgMjcyLjA1MSA3ODAuOTkzIDI0Ni44MzkgNzgxLjAwMiAyMTYuNzI2Qzc4MS4wMTMgMTc3LjQxNCA3ODEuMzI5IDE2MS45NzYgNzgyLjEyMyAxNjEuOTc2Qzc4NS4zMzYgMTYxLjk3NiA3OTYuMjQ4IDE2NS41MzMgODAxLjM0OCAxNjguMjQzQzgwOC4zNTYgMTcxLjk2NiA4MTYuNjAzIDE4MC43NTEgODIwLjQzMiAxODguNTdDODI3LjE1NiAyMDIuMzAzIDgzMS4wMTcgMjI1LjkyNiA4MzEuMDE3IDI1My4zMzVDODMxLjAxNyAyNzYuNDk4IDgyOC45ODUgMjc0LjE5MSA4NDkuMDE3IDI3My43NjRMODYyLjUxNyAyNzMuNDc2TDg2Mi44MjMgMjU1Ljk3NkM4NjMuNTEyIDIxNi42MTkgODU3LjI3NiAxODguNjA0IDg0My4yMzkgMTY4LjAwM0M4MzAuNzc4IDE0OS43MTQgODEyLjM3MiAxMzkuMTEgNzg2Ljc2OCAxMzUuNDdDNzc0LjMxOSAxMzMuNyA3NTQuODYyIDEzMy43MTYgNzQyLjAxNyAxMzUuNTA2Wk04NzguNDQzIDEzNS4wOTVDODc3LjQwNCAxMzYuNzc3IDg3OC45MjcgMTc0Ljc1IDg4MC41ODkgMTg4LjU4N0M4ODIuOTc4IDIwOC40ODUgODg4LjQwNSAyMjUuODI5IDg5NS43MzEgMjM2Ljk3NkM5MDQgMjQ5LjU1OSA5MTkuMjExIDI2Mi4yMDIgOTMxLjg2NiAyNjcuMDExQzk0NC41ODIgMjcxLjg0MiA5NjUuODA5IDI3NC4yOTQgOTkwLjUxNyAyNzMuNzg1TDEwMDUuNTIgMjczLjQ3NkwxMDA1Ljc3IDIwMy43MjZMMTAwNi4wMyAxMzMuOTc2SDk5MC4wMjRIOTc0LjAxN1YxODkuOTc2VjI0NS45NzZIOTY3LjE3N0M5NDkuNDgyIDI0NS45NzYgOTMyLjgxIDIzOC4wMTkgOTI0LjgwMyAyMjUuNzU0QzkxNS41NzkgMjExLjYyMyA5MTEuOTMgMTkzLjA5MyA5MTAuNDIgMTUyLjcyNkw5MDkuNzE5IDEzMy45NzZIODk0LjQyN0M4ODQuMjI0IDEzMy45NzYgODc4LjkwNSAxMzQuMzQ4IDg3OC40NDMgMTM1LjA5NVpNMTA2OC4yMSAxMzUuOTQ0QzEwNTguNTUgMTM4LjU1MSAxMDUxLjYxIDE0Mi4zNzggMTA0NS41MiAxNDguNDc2QzEwMzcuNjQgMTU2LjM1MSAxMDM1LjUyIDE2MS41NTggMTAzNS41MiAxNzIuOTc2QzEwMzUuNTIgMTg5LjE4OSAxMDM4LjkzIDE5My42OTUgMTA2Ny4wOSAyMTQuNjg5QzEwODUuMTQgMjI4LjE0NyAxMDg3LjgzIDIzMC44MzggMTA4OC42NCAyMzYuMzA3QzEwODkuNDMgMjQxLjYxNyAxMDg2LjE0IDI0NS41OTIgMTA3OS4zMyAyNDcuNTc1QzEwNjguOTcgMjUwLjU4NSAxMDQ1LjE2IDI0Ny42NiAxMDM0LjEgMjQyLjAxOUMxMDMxLjkgMjQwLjg5NSAxMDI5Ljg1IDIzOS45NzYgMTAyOS41NiAyMzkuOTc2QzEwMjcuOTcgMjM5Ljk3NiAxMDMwLjc0IDI2OC4wMjIgMTAzMi40NSAyNjkuMjI4QzEwMzQuNCAyNzAuNjA0IDEwNDYuNDIgMjczLjgxMSAxMDUzLjcxIDI3NC45MDFDMTA3NyAyNzguMzgzIDEwOTguNDkgMjczLjk4NiAxMTA5LjkyIDI2My40MDJDMTExOC4wNiAyNTUuODczIDExMjAuNDYgMjUwLjIwNSAxMTIwLjQ5IDIzOC40NzZDMTEyMC41MSAyMzAuNTM4IDExMjAuMTcgMjI4Ljc2OCAxMTE3LjYgMjIzLjQ3NkMxMTEzLjYxIDIxNS4yODMgMTEwMi44MiAyMDQuODE2IDEwODUuMzggMTkyLjIzMkMxMDc3LjYgMTg2LjYyIDEwNzAuMDYgMTgwLjYzMiAxMDY4LjYzIDE3OC45MjVDMTA2My4xOSAxNzIuNDU5IDEwNjYuNjkgMTY0LjUwNSAxMDc2LjExIDE2MS45MzZDMTA4My4xMyAxNjAuMDIgMTA5Ny44NyAxNjEuMzMxIDExMDguNTIgMTY0LjgxOEMxMTEzLjQ3IDE2Ni40NCAxMTE3LjcgMTY3LjU5OCAxMTE3LjkxIDE2Ny4zOUMxMTE4LjEzIDE2Ny4xODMgMTExNy40NiAxNjAuNjExIDExMTYuNDEgMTUyLjc4NkwxMTE0LjUyIDEzOC41NTlMMTEwNy41MiAxMzYuNjUxQzEwOTYuODcgMTMzLjc1MSAxMDc3LjYyIDEzMy40MDUgMTA2OC4yMSAxMzUuOTQ0Wk0yNjEuNSAxNTYuOTkyTDI1MC41MTcgMTY4LjAwOEwyNTAuMjEzIDIxNy43NDJDMjUwLjA0NSAyNDUuMDk2IDI1MC4xOCAyNjguOTQ4IDI1MC41MTIgMjcwLjc0NkwyNTEuMTE1IDI3NC4wMTZMMjcxLjgxNiAyNzMuNzQ2TDI5Mi41MTcgMjczLjQ3NkwyOTIuNzc2IDIxOS45NjdMMjkzLjAzNCAxNjYuNDU3TDI4Mi43NTkgMTU2LjIxN0wyNzIuNDgzIDE0NS45NzZMMjYxLjUgMTU2Ljk5MloiIGZpbGw9IiM3OTUyQjMiLz4KPC9nPgo8ZGVmcz4KPGNsaXBQYXRoIGlkPSJjbGlwMF8xNDc5XzIiPgo8cmVjdCB3aWR0aD0iMTI3MSIgaGVpZ2h0PSIyNzciIGZpbGw9IndoaXRlIi8+CjwvY2xpcFBhdGg+CjwvZGVmcz4KPC9zdmc+Cg=='
+};
+const _logoURI = {}, _logoImg = {};
+function logoURI(key, color){
+  const id = key + '|' + (color || '');
+  if (!_logoURI[id]){
+    let svg = atob(LOGO_B64[key]);
+    if (color) svg = svg.replace(/fill="(?!none")[^"]*"/g, 'fill="' + color + '"');
+    _logoURI[id] = 'data:image/svg+xml;base64,' + btoa(svg);
+  }
+  return _logoURI[id];
+}
+function logoImage(key, color){
+  const id = key + '|' + (color || '');
+  if (!_logoImg[id]){ const im = new Image(); im.src = logoURI(key, color); _logoImg[id] = im; }
+  return _logoImg[id];
+}
+const LOGO_RATIO = {tazabek:1569 / 345, turmush:1271 / 277};
+
+/* Проект = логотип + свои темы + оформление обложки + значения по умолчанию
+   для шапки и подвала. Tazabek — тот стиль, что был до появления выбора,
+   поэтому его рендер не меняется ни в одной точке. */
+const PROJECTS = {
+  tazabek:{
+    t:'Tazabek', logo:'tazabek', cover:'plain', site:'tazabek.kg', tag:'#tazabek',
+    about:'Стиль делового портала: фирменный красный #9a2d25, светлая, тёмная и бумажная темы.',
+    dots:['#9a2d25', '#F4F5F7', '#121212'],
+    themes:['tazabek', 'noir', 'paper'],
+    brand:{mark:'T', rubric:'экономика', handle:'@tazabek', date:'', source:'Источник: ', foot:''}
+  },
+  turmush:{
+    t:'Turmush', logo:'turmush', cover:'band', site:'turmush.kg', tag:'#turmush',
+    about:'Акцент #7952B3 и мягкий #f1ddff. Обложка — заставка поверх фото: плашка с аккаунтом, полоса заголовка, строка сайта.',
+    dots:['#7952B3', '#F1DDFF', '#121212'],
+    themes:['turmush', 'turmush_lilac', 'turmush_dark'],
+    band:'#110B1A', soft:'#F1DDFF', softInk:'#5E3D93',
+    brand:{mark:'T', rubric:'экономика', handle:'@turmush.akipress', date:'', source:'Источник: ',
+           foot:'АКЫРКЫ ЖАҢЫЛЫКТАР WWW.TURMUSH.KG САЙТЫНДА'}
+  }
+};
+
 /* ============================================================================
    2. СОСТОЯНИЕ
    ============================================================================ */
 const S = {
-  fmt:'4x5', theme:'tazabek', safe:false, feed:false,
-  brand:{mark:'T', rubric:'экономика', handle:'@tazabek', date:'', source:'Источник: '},
+  proj:'tazabek', fmt:'4x5', theme:'tazabek', safe:false, feed:false,
+  brand:{mark:'T', rubric:'экономика', handle:'@tazabek', date:'', source:'Источник: ', foot:''},
   slides:[], images:[]          /* images: {img, name} ; slide.crop {x,y,z} */
 };
 const $ = id => document.getElementById(id);
 const F = () => FORMATS[S.fmt];
 const T = () => THEMES[S.theme];
+const PJ = () => PROJECTS[S.proj];
 
 /* ============================================================================
    3. РАЗБОР ТЕКСТА НА СЛАЙДЫ
@@ -348,7 +456,7 @@ function buildSlides(raw, want){
     if (out.length < Math.max(3, want) - 1)
       out.push({kind:'text', title:'', text:shorten(s, 260), icon:'none', img:null});
   });
-  out.push({kind:'cta', title:'Полный материал — на tazabek.kg',
+  out.push({kind:'cta', title:'Полный материал — на ' + PJ().site,
             items:['Сохраните, чтобы вернуться к цифрам', 'Отправьте тому, кому это по работе'],
             icon:'save', img:null});
   return out.slice(0, Math.max(3, want));
@@ -413,13 +521,95 @@ function cover(ctx, im, x, y, w, h, crop){
   ctx.restore();
 }
 
+/* Заставка Turmush по редакционному образцу: плашка с аккаунтом в левом верхнем
+   углу, тёмная полоса с заголовком снизу, узкая строка сайта под ней.
+   От образца отличается набором (Arsenal), градиентами вместо резких линеек
+   и тем, что заголовок сам подбирает кегль под высоту своей полосы. */
+function turmushCover(ctx, s, W, H, th, b, onPhoto){
+  const p = PROJECTS.turmush, k = H / 1350, R = v => Math.round(v * k);
+  const strip = R(92), bandH = R(210), bandY = H - strip - bandH;
+  const pad = R(58);
+
+  if (onPhoto){
+    /* кадр уходит в полосу постепенно: линейка на стыке читается как брак печати */
+    const sc = ctx.createLinearGradient(0, bandY - R(360), 0, bandY);
+    sc.addColorStop(0, 'rgba(17,11,26,0)');
+    sc.addColorStop(1, 'rgba(17,11,26,.82)');
+    ctx.fillStyle = sc; ctx.fillRect(0, bandY - R(360), W, R(360));
+  } else if ((s.text || '').trim()){
+    /* без фотографии затемнять нечего — градиент по светлому фону выглядел бы грязью.
+       Свободную середину занимает лид, иначе карточка читается как незагрузившийся кадр. */
+    ctx.__w = '400';
+    const lead = fit(ctx, s.text, W - pad * 2, bandY - R(300), R(46), R(32), 1.34, '400');
+    drawLines(ctx, lead, pad, R(200), th.ink);
+  }
+
+  /* полоса заголовка: слева плотная, справа приоткрывает фотографию */
+  const bg = ctx.createLinearGradient(0, 0, W, 0);
+  bg.addColorStop(0, 'rgba(17,11,26,.97)');
+  bg.addColorStop(1, 'rgba(17,11,26,.78)');
+  ctx.fillStyle = bg; ctx.fillRect(0, bandY, W, bandH);
+
+  /* волосяная линия сверху: от акцента к мягкому, вместо жирной рамки образца */
+  const ln = ctx.createLinearGradient(0, 0, W, 0);
+  ln.addColorStop(0, '#7952B3'); ln.addColorStop(1, p.soft);
+  ctx.fillStyle = ln; ctx.fillRect(0, bandY - R(5), W, R(5));
+
+  /* заголовок капителью, кегль подбирается под полосу — обрезать нельзя */
+  ctx.__w = '700';
+  const o = fit(ctx, (s.title || '').toUpperCase(), W - pad * 2 - R(40), bandH - R(88), R(66), R(38), 1.08, '700');
+  drawLines(ctx, o, pad, bandY + R(24), '#fff');
+
+  /* источник обязателен на каждом слайде, заставка не исключение */
+  font(ctx, '400', R(26)); ctx.fillStyle = 'rgba(255,255,255,.82)';
+  ctx.fillText(b.source || '', pad, bandY + bandH - R(24));
+
+  /* нижняя строка — тот самый «менее акцентный» #f1ddff */
+  ctx.fillStyle = p.soft; ctx.fillRect(0, H - strip, W, strip);
+  const foot = (b.foot || '').toUpperCase();
+  font(ctx, '700', R(28)); ctx.fillStyle = p.softInk;
+  ctx.textAlign = 'center';
+  const fx = W / 2, fy = H - strip / 2 + R(10);
+  ctx.fillText(foot, fx, fy);
+  const dom = foot.match(/WWW\.[^\s]+/);       /* домен подчёркнут, как в образце */
+  if (dom){
+    const all = ctx.measureText(foot).width;
+    const pre = ctx.measureText(foot.slice(0, dom.index)).width;
+    ctx.fillRect(fx - all / 2 + pre, fy + R(9), ctx.measureText(dom[0]).width, Math.max(2, R(3)));
+  }
+  ctx.textAlign = 'left';
+
+  /* плашка с аккаунтом вплотную к углу, с акцентным торцом */
+  const chipH = R(72);
+  font(ctx, '700', R(34));
+  const chipW = ctx.measureText(b.handle || '').width + R(112);
+  const cg = ctx.createLinearGradient(0, 0, chipW, 0);
+  cg.addColorStop(0, 'rgba(17,11,26,.96)');
+  cg.addColorStop(.7, 'rgba(17,11,26,.90)');
+  cg.addColorStop(1, 'rgba(17,11,26,0)');
+  ctx.fillStyle = cg; ctx.fillRect(0, 0, chipW, chipH);
+  ctx.fillStyle = '#7952B3'; ctx.fillRect(0, 0, R(8), chipH);
+  ctx.fillStyle = '#fff'; ctx.fillText(b.handle || '', R(34), chipH / 2 + R(12));
+
+  /* логотип белым в правом верхнем углу — правый край кадра свободен */
+  const li = logoImage('turmush', '#ffffff');
+  if (li.complete && li.naturalWidth){
+    const lw = R(196);
+    ctx.save(); ctx.globalAlpha = .96;
+    ctx.drawImage(li, W - pad - lw, R(32), lw, lw / LOGO_RATIO.turmush);
+    ctx.restore();
+  }
+}
+
 function drawCard(cv, i, opts){
   opts = opts || {};
   const s = S.slides[i], n = S.slides.length, f = F(), th = T();
   const W = f.w, H = f.h;
   cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
-  const onPhoto = s.kind === 'photo' && s.img != null && S.images[s.img];
+  /* обложке фон-фотография тоже разрешена: на ней держится заставка Turmush */
+  const onPhoto = (s.kind === 'photo' || s.kind === 'cover') && s.img != null && S.images[s.img];
+  const zastavka = PJ().cover === 'band' && s.kind === 'cover';
   const ink = onPhoto ? '#fff' : th.ink;
   const mute = onPhoto ? 'rgba(255,255,255,.85)' : th.mute;
   const line = onPhoto ? 'rgba(255,255,255,.32)' : th.line;
@@ -428,10 +618,12 @@ function drawCard(cv, i, opts){
   ctx.fillStyle = th.bg; ctx.fillRect(0, 0, W, H);
   if (onPhoto){
     cover(ctx, S.images[s.img].img, 0, 0, W, H, s.crop);
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, 'rgba(8,8,10,.18)'); g.addColorStop(.42, 'rgba(8,8,10,.42)');
-    g.addColorStop(1, 'rgba(8,8,10,.88)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    if (!zastavka){                       /* у заставки свои градиенты, второй слой её замутит */
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, 'rgba(8,8,10,.18)'); g.addColorStop(.42, 'rgba(8,8,10,.42)');
+      g.addColorStop(1, 'rgba(8,8,10,.88)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
   } else {
     /* тихий фоновый узор — свои формы, ничего чужого */
     ctx.save(); ctx.globalAlpha = .07; ctx.fillStyle = th.accent;
@@ -441,40 +633,44 @@ function drawCard(cv, i, opts){
     ctx.restore();
   }
 
-  /* шапка */
+  /* шапка и подвал: на заставке их заменяют плашка, полоса и строка сайта */
   const b = S.brand;
-  font(ctx, '700', 34); const mw = ctx.measureText(b.mark).width;
-  ctx.fillStyle = th.accent; roundRect(ctx, PAD, PAD - 6, mw + 36, 56, 28); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.fillText(b.mark, PAD + 18, PAD + 32);
-  font(ctx, '700', 30);
-  ctx.fillStyle = mute;
-  const rub = (b.rubric || '').toUpperCase().split('').join(' ');
-  ctx.fillText(rub, PAD + mw + 60, PAD + 30);
-  ctx.textAlign = 'right'; ctx.fillText((i + 1) + '/' + n, W - PAD, PAD + 30); ctx.textAlign = 'left';
-
-  /* подвал */
   const footY = H - PAD - 40;
-  ctx.strokeStyle = line; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(PAD, footY - 26); ctx.lineTo(W - PAD, footY - 26); ctx.stroke();
-  ctx.__w = '400'; font(ctx, '400', 28); ctx.fillStyle = mute;
-  wrap(ctx, b.source || '', W - PAD * 2 - 300).slice(0, 2)
-    .forEach((l, k) => ctx.fillText(l, PAD, footY + 4 + k * 34));
-  ctx.textAlign = 'right';
-  if (i < n - 1){
-    font(ctx, '700', 30); ctx.fillStyle = th.accent;
-    ctx.fillText('листайте  →', W - PAD, footY + 4);
-  } else {
-    font(ctx, '700', 30); ctx.fillStyle = ink;
-    ctx.fillText(b.handle || '', W - PAD, footY + 4);
+  if (!zastavka){
+    font(ctx, '700', 34); const mw = ctx.measureText(b.mark).width;
+    ctx.fillStyle = th.accent; roundRect(ctx, PAD, PAD - 6, mw + 36, 56, 28); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillText(b.mark, PAD + 18, PAD + 32);
+    font(ctx, '700', 30);
+    ctx.fillStyle = mute;
+    const rub = (b.rubric || '').toUpperCase().split('').join(' ');
+    ctx.fillText(rub, PAD + mw + 60, PAD + 30);
+    ctx.textAlign = 'right'; ctx.fillText((i + 1) + '/' + n, W - PAD, PAD + 30); ctx.textAlign = 'left';
+
+    ctx.strokeStyle = line; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(PAD, footY - 26); ctx.lineTo(W - PAD, footY - 26); ctx.stroke();
+    ctx.__w = '400'; font(ctx, '400', 28); ctx.fillStyle = mute;
+    wrap(ctx, b.source || '', W - PAD * 2 - 300).slice(0, 2)
+      .forEach((l, k) => ctx.fillText(l, PAD, footY + 4 + k * 34));
+    ctx.textAlign = 'right';
+    if (i < n - 1){
+      font(ctx, '700', 30); ctx.fillStyle = th.accent;
+      ctx.fillText('листайте  →', W - PAD, footY + 4);
+    } else {
+      font(ctx, '700', 30); ctx.fillStyle = ink;
+      ctx.fillText(b.handle || '', W - PAD, footY + 4);
+    }
+    ctx.textAlign = 'left';
   }
-  ctx.textAlign = 'left';
 
   /* тело */
   const x = PAD, maxW = W - PAD * 2;
   const top = PAD + 90, bot = footY - 70, avail = bot - top;
   let y = top;
 
-  if (s.kind === 'cover'){
+  if (zastavka){
+    turmushCover(ctx, s, W, H, th, b, !!onPhoto);
+
+  } else if (s.kind === 'cover'){
     const hasDate = !!(b.date || '').trim();
     const hTitle = Math.min(avail * .62, avail - (s.text ? 200 : 0));
     y = top + Math.max(0, (avail - (hTitle + (s.text ? 170 : 0))) * .38);
@@ -696,7 +892,8 @@ function renderEds(){
         const f = el.dataset.f;
         if (f === 'kind'){ s.kind = el.value; renderEds(); }
         else if (f === 'img'){ s.img = el.value === '' ? null : +el.value; s.crop = {x:0, y:0, z:1};
-                               if (s.kind !== 'photo') { s.kind = 'photo'; renderEds(); } }
+                               /* обложка остаётся обложкой: фото ей нужно как фон заставки */
+                               if (s.kind !== 'photo' && s.kind !== 'cover') { s.kind = 'photo'; renderEds(); } }
         else if (f === 'items') s.items = el.value.split('\n');
         else s[f] = el.value;
         renderCards(); save();
@@ -826,7 +1023,7 @@ function makeCaption(){
   words.forEach(w => { if (!STOP.has(w)) freq[w] = (freq[w] || 0) + 1; });
   const tags = Object.keys(freq).sort((a, b) => freq[b] - freq[a]).slice(0, 4)
     .map(w => '#' + w.replace(/[^а-яёa-z]/g, ''));
-  const base = ['#кыргызстан', '#экономика', '#tazabek', '#бизнес'];
+  const base = ['#кыргызстан', '#экономика', PJ().tag, '#бизнес'];
   const all = [...new Set(tags.concat(base))].slice(0, 8);
   const out = [
     first,
@@ -890,7 +1087,7 @@ function seg(el, obj, key, after){
 function save(){
   try{
     localStorage.setItem('postinsta', JSON.stringify({
-      fmt:S.fmt, theme:S.theme, brand:S.brand, raw:$('raw').value,
+      proj:S.proj, fmt:S.fmt, theme:S.theme, brand:S.brand, raw:$('raw').value,
       slides:S.slides.map(s => Object.assign({}, s, {img:null}))   /* картинки не сериализуем */
     }));
   }catch(e){}
@@ -899,7 +1096,9 @@ function load(){
   try{
     const d = JSON.parse(localStorage.getItem('postinsta') || 'null');
     if (!d) return false;
-    S.fmt = d.fmt || S.fmt; S.theme = d.theme || S.theme;
+    S.proj = (d.proj && PROJECTS[d.proj]) ? d.proj : S.proj;
+    S.fmt = d.fmt || S.fmt;
+    S.theme = (d.theme && THEMES[d.theme]) ? d.theme : S.theme;
     Object.assign(S.brand, d.brand || {});
     S.slides = d.slides || [];
     $('raw').value = d.raw || '';
@@ -909,12 +1108,47 @@ function load(){
 function syncBrandInputs(){
   $('fMark').value = S.brand.mark; $('fRubric').value = S.brand.rubric;
   $('fHandle').value = S.brand.handle; $('fDate').value = S.brand.date;
-  $('fSource').value = S.brand.source;
+  $('fSource').value = S.brand.source; $('fFoot').value = S.brand.foot || '';
 }
-[['fMark','mark'],['fRubric','rubric'],['fHandle','handle'],['fDate','date'],['fSource','source']]
+[['fMark','mark'],['fRubric','rubric'],['fHandle','handle'],['fDate','date'],['fSource','source'],['fFoot','foot']]
   .forEach(([id, k]) => $(id).addEventListener('input', () => {
     S.brand[k] = $(id).value; renderCards(); save();
   }));
+
+/* Проект переключает интерфейсный акцент, набор тем и значения шапки.
+   Значения берём только при переходе на ДРУГОЙ проект: иначе каждый заход
+   затирал бы правки пользователя в аккаунте и подвале. Дата — содержание
+   новости, а не признак стиля, поэтому её оставляем как есть. */
+function applyProject(key, freshBrand){
+  S.proj = PROJECTS[key] ? key : 'tazabek';
+  const p = PROJECTS[S.proj];
+  if (!THEMES[S.theme] || THEMES[S.theme].proj !== S.proj) S.theme = p.themes[0];
+  if (freshBrand) Object.assign(S.brand, p.brand, {date:S.brand.date});
+  document.body.classList.toggle('proj-turmush', S.proj === 'turmush');
+  $('bProj').textContent = 'проект: ' + p.t;
+  paintThemeSeg(); syncBrandInputs(); renderCards(); renderFeed(); save();
+}
+function paintThemeSeg(){
+  const own = {};
+  PROJECTS[S.proj].themes.forEach(k => own[k] = THEMES[k]);
+  seg($('segTheme'), own, 'theme', () => renderCards());
+}
+function renderPick(){
+  $('pickRow').innerHTML = Object.keys(PROJECTS).map(k => {
+    const p = PROJECTS[k], cur = S.proj === k;
+    return '<button class="pcard' + (cur ? ' cur' : '') + '" data-p="' + k + '" style="--pc-acc:' + p.dots[0] + '">' +
+      '<span class="plogo"><img src="' + logoURI(p.logo, '#ffffff') + '" alt="' + p.t + '"></span>' +
+      '<span class="pname">' + p.t + (cur ? ' · текущий' : '') + '</span>' +
+      '<span class="pabout">' + p.about + '</span>' +
+      '<span class="pdots">' + p.dots.map(c => '<i style="background:' + c + '"></i>').join('') + '</span>' +
+      '<span class="pgo">' + (cur ? 'продолжить' : 'выбрать') + '</span></button>';
+  }).join('');
+  $('pickRow').querySelectorAll('[data-p]').forEach(el => el.onclick = () => {
+    applyProject(el.dataset.p, el.dataset.p !== S.proj);
+    document.body.classList.remove('picking');
+  });
+}
+function openPick(){ renderPick(); document.body.classList.add('picking'); }
 
 function build(){
   const want = Math.max(3, Math.min(12, +$('nSlides').value || 8));
@@ -925,6 +1159,7 @@ function build(){
 $('bBuild').onclick = build; $('bBuild2').onclick = build;
 $('bAdd').onclick = () => { S.slides.push({kind:'text', title:'', text:'', icon:'none', img:null});
   renderEds(); renderCards(); save(); };
+$('bProj').onclick = openPick;
 $('bAll').onclick = downloadAll;
 $('bZip').onclick = downloadZip;
 $('bCap').onclick = makeCaption;
@@ -950,13 +1185,17 @@ const DEMO = `Импорт сахара в Кыргызстан вырос в 2,
 
 (function start(){
   seg($('segFmt'), FORMATS, 'fmt', () => { renderCards(); });
-  seg($('segTheme'), THEMES, 'theme', () => { renderCards(); });
   const had = load();
-  syncBrandInputs();
+  applyProject(S.proj, false);
   if (!had){ $('raw').value = DEMO; S.brand.date = '30 июля 2026'; syncBrandInputs(); build(); }
   else { renderEds(); renderCards(); makeCaption(); }
   renderImgs();
+  openPick();                                  /* выбор проекта — первым экраном на каждом заходе */
   document.fonts.ready.then(renderCards);      /* первый рендер мог уйти до загрузки Arsenal */
+  Object.keys(PROJECTS).forEach(k => {         /* логотип, как и шрифт, может не успеть к первому кадру */
+    const im = logoImage(PROJECTS[k].logo, '#ffffff');
+    if (!im.complete) im.addEventListener('load', () => renderCards(), {once:true});
+  });
 })();
 </script>
 </body>
