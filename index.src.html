@@ -83,6 +83,11 @@ main{flex:1; min-height:0; display:grid; grid-template-columns:minmax(340px,420p
 #left{border-right:1px solid var(--ui-line); overflow:auto; padding:16px; display:flex; flex-direction:column;
       gap:14px; background:var(--ui-panel)}
 #right{overflow:auto; padding:22px; background:var(--ui-bg)}
+/* Боковая панель по умолчанию убрана: карточкам нужно всё место рабочей области.
+   Возвращается кнопкой «панель» в шапке, выбор помнится в localStorage. Поля панели
+   при этом остаются в DOM — правки на карточке пишут в них напрямую. */
+body.noleft main{grid-template-columns:minmax(0,1fr)}
+body.noleft #left{display:none}
 
 textarea#raw{
   width:100%; min-height:190px; resize:vertical; background:var(--ui-field); border:1px solid var(--ui-line);
@@ -143,7 +148,11 @@ textarea.ta{min-height:58px; background:var(--ui-field); border:1px solid var(--
 #cards{display:flex; flex-wrap:wrap; gap:22px; align-items:flex-start}
 /* Ширину блока задаёт карточка, а не панель под ней: на 390 px панель из четырёх кнопок
    раздувала блок до 462 px и карточка уезжала за левый край. */
-.cardbox{position:relative; max-width:100%; min-width:0}
+/* Ширину блока задаёт число из JS (fitCards), а не содержимое: панель под карточкой
+   при выделении объекта меняла набор кнопок, блок раздувался, и карточка перескакивала
+   в другой ряд прямо во время правки. Кнопки скрываются visibility — место под них
+   остаётся, поэтому геометрия ряда не шевелится вообще. */
+.cardbox{position:relative; max-width:100%; min-width:0; flex:0 0 auto}
 .cardbox canvas{
   display:block; border-radius:6px; background:#fff; box-shadow:0 10px 30px rgba(18,18,18,.16);
   cursor:grab; max-width:100%; height:auto;
@@ -152,7 +161,7 @@ textarea.ta{min-height:58px; background:var(--ui-field); border:1px solid var(--
 .cardbox .bar{
   display:flex; align-items:center; gap:8px; margin-top:10px; font-size:14px; color:var(--ui-mute);
   background:var(--ui-panel); border:1px solid var(--ui-line); border-radius:14px; padding:8px 10px;
-  flex-wrap:wrap; width:100%;
+  flex-wrap:wrap; width:100%; min-width:0;
 }
 .cardbox .bar .num{
   width:26px; height:26px; border-radius:9px; background:var(--ui-acc); color:#fff; font-weight:700;
@@ -172,6 +181,15 @@ svg.i{width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:2;
       stroke-linecap:round; stroke-linejoin:round; flex:0 0 auto}
 .cardbox.sel canvas{box-shadow:0 0 0 2px var(--ui-acc), 0 14px 34px rgba(18,18,18,.18)}
 .cardbox.dropping canvas{box-shadow:0 0 0 4px var(--ui-acc), 0 14px 34px rgba(18,18,18,.22)}
+/* карточка-приёмник, пока над ней держат объект из другой карточки */
+.cardbox.tocard canvas{box-shadow:0 0 0 5px var(--ui-acc), 0 16px 38px rgba(18,18,18,.24)}
+#ghost{
+  position:fixed; z-index:130; pointer-events:none; display:none; max-width:300px; padding:6px 10px;
+  background:var(--ui-acc); color:#fff; border-radius:10px; font-size:13px; line-height:1.3;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  box-shadow:0 10px 26px rgba(18,18,18,.28);
+}
+#ghost.on{display:block}
 
 /* правка прямо на карточке: поле встаёт ровно на зону текста */
 /* панель начертаний над полем правки */
@@ -254,6 +272,7 @@ body.picking #pick{display:grid}
 <header>
   <h1>post·<b>insta</b> — текст в карточки</h1>
   <button class="btn ghost" id="bProj" title="сменить проект"></button>
+  <button class="btn ghost" id="bPanel" title="показать или убрать боковую панель"></button>
   <div class="seg" id="segFmt"></div>
   <div class="seg" id="segTheme"></div>
   <div class="seg" id="segZoom" title="размер превью"></div>
@@ -294,6 +313,7 @@ body.picking #pick{display:grid}
       <span class="hint" id="padNote"></span>
     </div>
     <div id="hiddenBox" class="hint" style="display:none"></div>
+    <div id="lockBox" class="hint" style="display:none"></div>
 
     <details class="sec">
       <summary>технические надписи</summary>
@@ -315,6 +335,11 @@ body.picking #pick{display:grid}
     <p class="hint">На самой карточке: щелчок по тексту берёт его, перетаскивание двигает,
       колесо меняет кегль, двойной щелчок правит текст на месте. Щелчок по фону берёт
       фотографию — её так же можно двигать и уменьшать колесом.</p>
+    <p class="hint">Объект можно вытащить <b>в другую карточку</b>: тащите за пределы своей —
+      карточка-приёмник подсветится, и объект встанет туда, где отпустили. С зажатым
+      <b>Ctrl</b> остаётся копия. Пустое текстовое поле «Текст…» есть у каждой карточки:
+      двойной щелчок по нему — и печатайте. Кнопка с замком (или клавиша <b>L</b>) запирает
+      выбранный объект: после правки он не сдвинется, пока замок не откроют.</p>
 
     <h3 class="sec">слайды</h3>
     <div id="eds" style="display:flex; flex-direction:column; gap:10px"></div>
@@ -351,6 +376,7 @@ body.picking #pick{display:grid}
   </div>
 </div>
 <div id="drop">отпустите файлы — добавлю как фото</div>
+<div id="ghost"></div>
 
 <script>
 /* ============================================================================
@@ -415,7 +441,10 @@ const UI = {
   del:   svg('M6 7h12M9 7V5h6v2M8 7l1 13h6l1-13M11 11v6M14 11v6'),
   crop:  svg('M7 3v14h14M3 7h14v14'),
   fitin: svg('M4 4h16v16H4zM8 9h8v6H8z'),
-  frame: svg('M4 8h16M4 16h16M8 4v16M16 4v16')
+  frame: svg('M4 8h16M4 16h16M8 4v16M16 4v16'),
+  lock:  svg('M6 11h12v9H6zM9 11V8a3 3 0 0 1 6 0v3'),
+  unlock:svg('M6 11h12v9H6zM9 11V8a3 3 0 0 1 6 0'),
+  panel: svg('M4 4h16v16H4zM10 4v16')
 };
 const KINDS = {
   cover: 'обложка / хук',
@@ -526,6 +555,7 @@ const PROJECTS = {
 const S = {
   proj:'tazabek', fmt:'4x5', theme:'tazabek', safe:false, feed:false, pad:PAD, zoom:'m', sel:null,
   hide:{}, pmode:'pic',        /* pmode: чем двигаем — картинкой внутри рамки или самой рамкой */
+  panel:false,                 /* боковая панель: по умолчанию убрана, место отдано карточкам */
   demo:true,
   brand:{mark:'T', rubric:'экономика', handle:'@tazabek', date:'', source:'Источник: ', foot:'',
          swipe:'листайте  →', ctaTitle:'Полный материал — на tazabek.kg',
@@ -654,6 +684,10 @@ function font(ctx, weight, size, italic){
 /* Пол кегля: 40 px по типографике barskoon_bedel_3d (README, «Кегль нигде не меньше 40 px,
    заголовки от 64»). Ниже этого авто-подбор не опускается ни в одной раскладке. */
 const MINPT = 40;
+/* Пустое текстовое поле есть в каждой карточке: на экране вместо текста стоит «Текст…».
+   В файл эта надпись не идёт — рендер в файл идёт с clean:true и до неё не доходит.
+   Так карточку можно начать печатать прямо на ней, не открывая боковую панель. */
+const PH = 'Текст…';
 function wrap(ctx, text, maxW){
   const words = String(text).split(/\s+/), lines = [];
   let cur = '';
@@ -699,6 +733,18 @@ function offEdit(sl, key){
   if (!sl.off[key]) sl.off[key] = Object.assign({}, OFF0);
   return sl.off[key];
 }
+/* Замочек. Держим его в самом слайде (sl.lk), поэтому он живёт вместе с карточкой,
+   сериализуется в localStorage и работает для любого объекта — надписи, иконки,
+   технической строки, фотографии. Запертый объект не двигается, не тянется, не меняет
+   кегля и не удаляется: правку применили — закрыли замок, и раскладка стоит на месте.
+   Текст при этом править можно: замок держит геометрию, а не содержание. */
+function isLocked(sl, key){ return !!(sl && sl.lk && sl.lk[key]); }
+function setLock(sl, key, v){
+  if (!sl || !key) return;
+  sl.lk = sl.lk || {};
+  if (v) sl.lk[key] = true; else delete sl.lk[key];
+}
+const lockKeys = sl => Object.keys((sl && sl.lk) || {});
 const sc1 = (v, k) => k === 1 ? v : Math.round(v * k);
 const scMin = (v, k) => k === 1 ? v : Math.max(28, Math.round(v * k));
 function block(ctx, text, x, y, maxW, maxH, start, min, lh, weight, color, field){
@@ -715,6 +761,30 @@ function block(ctx, text, x, y, maxW, maxH, start, min, lh, weight, color, field
                                   size:fo.size, lh:lh, weight:wg, italic:!!o.i});
   /* поток отсчитывается от исходного y: сдвинутая рамка не тащит за собой соседние блоки */
   return y + (y2 - by);
+}
+/* Рамка пустого текстового поля: пунктир и подпись «Текст…». Зона пишется как у обычного
+   текста (и заменяет пустую, если её успел записать block), поэтому двойной щелчок открывает
+   правку, перетаскивание двигает, колесо меняет кегль, а замочек всё это запирает. */
+function textPlaceholder(ctx, sl, slot, color){
+  const o = offOf(sl, 'text');
+  const sz = Math.max(MINPT, Math.round((slot.size || 44) * o.sc));
+  const bx = slot.x + o.dx, by = slot.y + o.dy;
+  const bw = Math.max(200, slot.w + o.dw), bh = Math.max(sz * 1.3, sz * 1.3 + o.dh);
+  ctx.save();
+  ctx.globalAlpha = .5; ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.setLineDash([12, 10]);
+  roundRect(ctx, bx, by, bw, bh, 14); ctx.stroke();
+  ctx.setLineDash([]); ctx.globalAlpha = .75;
+  const wg = o.b ? '700' : (slot.weight || '400');
+  font(ctx, wg, sz, o.i);
+  ctx.fillStyle = color; ctx.textAlign = 'left';
+  ctx.fillText(PH, bx + 18, by + bh / 2 + sz * .34);
+  ctx.restore();
+  if (ZONES){
+    const z = {f:'text', x:bx, y:by, w:bw, h:bh, size:sz, lh:slot.lh || 1.3,
+               weight:wg, italic:!!o.i, ph:true};
+    const k = ZONES.findIndex(q => q.f === 'text');
+    if (k >= 0) ZONES[k] = z; else ZONES.push(z);
+  }
 }
 const zKey = z => z.f;
 const hidden = k => !!S.hide[k];
@@ -806,6 +876,7 @@ function drawPic(ctx, im, fr, crop){
    кегль всё-таки уменьшается: карточка не должна разъезжаться. */
 function turmushCover(ctx, s, W, H, th, b, onPhoto){
   const p = PROJECTS.turmush, k = H / 1350, R = v => Math.round(v * k);
+  let phs = null;                       /* место под пустое текстовое поле, если лид не занят */
   const O = offOf(s, 'title');
   const pad = R(58);
   const strip = hidden('brand.foot') ? 0 : R(92);
@@ -846,6 +917,11 @@ function turmushCover(ctx, s, W, H, th, b, onPhoto){
                            w:Math.max(R(300), W - pad * 2 + OL.dw),
                            h:Math.max(lead.size, lead.lines.length * lead.size * lead.lh),
                            size:lead.size, lh:1.34, weight:'400'});
+  } else if (!onPhoto){
+    /* Лид пуст — отдаём его место под заготовку «Текст…»: рисует её уже drawCard,
+       он один знает, экран это или файл. Поверх фотографии заготовки нет: там середина
+       кадра занята снимком, а текст заставки живёт в полосе заголовка. */
+    phs = {x:pad, y:R(200), w:Math.max(R(300), W - pad * 2), size:R(46), lh:1.34, weight:'400'};
   }
 
   /* полоса заголовка: слева плотная, справа приоткрывает фотографию */
@@ -920,6 +996,7 @@ function turmushCover(ctx, s, W, H, th, b, onPhoto){
       if (ZONES) ZONES.push({f:'logo', x:W - pad - lw + ol.dx, y:R(32) + ol.dy, w:lw, h:lh, fixed:true});
     }
   }
+  return phs;
 }
 
 function drawCard(cv, i, opts){
@@ -1036,10 +1113,10 @@ function drawCard(cv, i, opts){
   const x = P.l, maxW = W - P.l - P.r;
   const top = P.t + (bare ? 0 : 90), bot = bare ? H - P.b : footY - 70;
   const avail = Math.max(240, bot - top);
-  let y = top;
+  let y = top, phSlot = null;      /* phSlot — где стояло бы текстовое поле, будь в нём текст */
 
   if (zastavka){
-    turmushCover(ctx, s, W, H, th, b, !!onPhoto);
+    phSlot = turmushCover(ctx, s, W, H, th, b, !!onPhoto);
 
   } else if (s.kind === 'cover'){
     const hasDate = !!(b.date || '').trim();
@@ -1051,6 +1128,7 @@ function drawCard(cv, i, opts){
     }
     y = block(ctx, s.title || '', x, y, maxW, hTitle, 104, 54, 1.04, '700', ink, 'title') + 34;
     if (s.text) block(ctx, s.text, x, y, maxW, 200, 46, 40, 1.36, '400', mute, 'text');
+    else phSlot = {x:x, y:y, w:maxW, size:46, lh:1.36, weight:'400'};
     drawIcon(ctx, s, W - P.r - 96, bot - 96, 96, acc, 2.2);
 
   } else if (s.kind === 'number'){
@@ -1074,6 +1152,7 @@ function drawCard(cv, i, opts){
       y += us * 74 / 44;
     }
     if (s.text) block(ctx, s.text, x, y + 12, maxW, avail * .3, 42, 40, 1.38, '400', mute, 'text');
+    else phSlot = {x:x, y:y + 12, w:maxW, size:42, lh:1.38, weight:'400'};
     drawIcon(ctx, s, W - P.r - 110, top + 10, 110, acc, 2);
 
   } else if (s.kind === 'list' || s.kind === 'cta'){
@@ -1110,14 +1189,22 @@ function drawCard(cv, i, opts){
                              size:o.size, lh:o.lh, weight:'400'});
       y += Math.max(64, o.lines.length * o.size * o.lh) + gap;
     });
+    /* Пояснение под пунктами — то же поле text, что и у остальных карточек: раньше у списка
+       его не было вовсе, теперь пустым оно показывает «Текст…», а заполненным печатается. */
+    const ty = Math.min(y + 6, bot - 84);
+    if (String(s.text || '').trim())
+      block(ctx, s.text, x, ty, maxW, Math.max(64, bot - ty), 42, 40, 1.36, '400', mute, 'text');
+    else phSlot = {x:x, y:ty, w:maxW, size:42, lh:1.36, weight:'400'};
     if (s.kind === 'cta'){
       label('brand.handle', S.brand.handle, x, bot - 6, 40, '700', acc);
     }
 
   } else if (s.kind === 'quote'){
     y = top + avail * .12;
-    const q = '«' + (s.text || '') + '»';
-    y = block(ctx, q, x, y, maxW, avail * .58, 58, 38, 1.26, '700', ink, 'text') + 46;
+    /* Пустая цитата раньше печаталась как «» и в таком виде уезжала в файл. */
+    const qt = String(s.text || '').trim();
+    y = block(ctx, qt ? '«' + qt + '»' : '', x, y, maxW, avail * .58, 58, 38, 1.26, '700', ink, 'text') + 46;
+    if (!qt) phSlot = {x:x, y:y - 46, w:maxW, size:58, lh:1.26, weight:'700'};
     ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(x + 44, y + 44, 44, 0, 7); ctx.fill();
     ctx.fillStyle = onPhoto ? '#121212' : '#fff'; font(ctx, '700', 38); ctx.textAlign = 'center';
     ctx.fillText((s.title || '·').trim().charAt(0).toUpperCase(), x + 44, y + 57); ctx.textAlign = 'left';
@@ -1133,14 +1220,19 @@ function drawCard(cv, i, opts){
     } else y = top + avail * .45;
     if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .3, 64, 40, 1.1, '700', ink, 'title') + 26;
     if (s.text) block(ctx, s.text, x, y, maxW, bot - y, 44, 40, 1.36, '400', onPhoto ? '#fff' : mute, 'text');
+    else phSlot = {x:x, y:y, w:maxW, size:44, lh:1.36, weight:'400'};
 
   } else { /* text */
     const t = s.text || '';
     y = top + avail * .1;
     if (s.title) y = block(ctx, s.title, x, y, maxW, avail * .28, 64, 40, 1.1, '700', ink, 'title') + 30;
-    block(ctx, t, x, y, maxW, bot - y, 48, 40, 1.4, '400', ink, 'text');
+    if (t) block(ctx, t, x, y, maxW, bot - y, 48, 40, 1.4, '400', ink, 'text');
+    else phSlot = {x:x, y:y, w:maxW, size:48, lh:1.4, weight:'400'};
     drawIcon(ctx, s, x, bot - 92, 92, acc, 2.2);
   }
+
+  /* «Текст…» — пустое текстовое поле карточки. Только на экране: в файле пустое поле пустое. */
+  if (phSlot && !opts.clean) textPlaceholder(ctx, s, phSlot, mute);
 
   /* safe-zone: красным то, что срежет сетка профиля 3:4, синим — центральные 80% */
   /* Зоны пишем только при экранной отрисовке: экспорт идёт с clean:true и ZONES=null,
@@ -1153,16 +1245,18 @@ function drawCard(cv, i, opts){
   if (!opts.clean && S.sel && S.sel.i === i){
     const z = (s._zones || []).find(q => zKey(q) === S.sel.f);
     if (z){
+      const lk = isLocked(s, S.sel.f);
       ctx.save();
-      ctx.strokeStyle = th.accent; ctx.lineWidth = 3;
-      ctx.setLineDash(z.fixed ? [10, 7] : []);
+      ctx.strokeStyle = lk ? th.mute : th.accent; ctx.lineWidth = 3;
+      ctx.setLineDash(lk ? [7, 7] : (z.fixed ? [10, 7] : []));
       ctx.strokeRect(z.x, z.y, z.w, z.h);
       ctx.setLineDash([]);
-      handlesOf(z).forEach(h => {
+      handlesOf(z, s).forEach(h => {
         ctx.fillStyle = '#fff'; ctx.strokeStyle = th.accent; ctx.lineWidth = 3;
         roundRect(ctx, h.x - HND / 2, h.y - HND / 2, HND, HND, 5);
         ctx.fill(); ctx.stroke();
       });
+      if (lk) lockBadge(ctx, z, th, W, H);   /* ручек нет — вместо них видно, почему */
       ctx.restore();
     }
   }
@@ -1232,6 +1326,8 @@ function renderCards(){
   const box = $('cards'); box.innerHTML = '';
   S.slides.forEach((s, i) => {
     const d = document.createElement('div'); d.className = 'cardbox';
+    d.dataset.i = i;                          /* номер карточки — адрес для переноса объектов */
+    d.style.width = PREVIEW_W() + 'px';       /* ширина от числа, а не от содержимого панели */
     const cv = document.createElement('canvas');
     cv.style.width = PREVIEW_W() + 'px';
     d.appendChild(cv);
@@ -1245,6 +1341,7 @@ function renderCards(){
       '<button data-act="minus" title="мельче">' + UI.minus + '</button>' +
       '<button data-act="plus" title="крупнее">' + UI.plus + '</button>' +
       '<button data-act="del" title="удалить выбранное (Delete)">' + UI.del + '</button>' +
+      '<button data-act="lock" title="запереть объект (L)">' + UI.unlock + '</button>' +
       '<button data-act="reset" title="вернуть на место">' + UI.reset + '</button>' +
       '<button data-act="png" class="prim" title="скачать эту карточку">' + UI.down + ' PNG</button>';
     d.appendChild(bar);
@@ -1258,13 +1355,17 @@ function renderCards(){
       if (act === 'photo'){ pickPhotoFor(i); return; }
       if (act === 'del'){ deleteSelected(); return; }
       if (act === 'pmode'){ S.pmode = S.pmode === 'pic' ? 'frame' : 'pic'; paintBar(d, i); save(); return; }
+      if (act === 'lock'){ toggleLockSel(i); return; }
       if (act === 'fit'){
+        if (isLocked(sl, 'photo')) return;                /* фото на замке — рамку не трогаем */
         const f = F(), fr = picFrameEdit(sl, f.w, f.h);
         fr.fit = fr.fit === 'contain' ? 'cover' : 'contain';
         drawCard(cv, i); paintBar(d, i); save(); return;
       }
       const sel = S.sel && S.sel.i === i ? S.sel.f : null;
       const onPic = sel === 'photo' || (!sel && sl.img != null);
+      /* Замок держит геометрию: ни кегль, ни сброс, ни масштаб фотографии по нему не идут. */
+      if (isLocked(sl, sel || (onPic ? 'photo' : ''))){ paintBar(d, i); return; }
       if (act === 'reset'){
         if (sel && !onPic){ if (sl.off) delete sl.off[sel]; }
         else { sl.crop = {x:0, y:0, z:1}; sl.frame = null; }
@@ -1282,7 +1383,7 @@ function renderCards(){
     });
     paintBar(d, i);
   });
-  renderFeed();
+  renderFeed(); paintLocks();
 }
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 /* Подпись в панели говорит, что именно выбрано и чем управляют кнопки. Кнопки, которые
@@ -1293,17 +1394,27 @@ function paintBar(boxEl, i){
   const hasPic = sl.img != null;
   const onPic = sel === 'photo';
   const o = sel && !onPic ? offOf(sl, sel) : null;
+  const lk = sel ? isLocked(sl, sel) : false;
   w.textContent = sel
-    ? (onPic ? 'фото ' + Math.round(((sl.crop && sl.crop.z) || 1) * 100) + '%'
-             : zTitle(sel) + ' ' + Math.round(o.sc * 100) + '%')
+    ? (onPic ? 'фото ' + Math.round(((sl.crop && sl.crop.z) || 1) * 100) + '%' + (lk ? ' · замок' : '')
+             : zTitle(sel) + ' ' + Math.round(o.sc * 100) + '%' + (lk ? ' · замок' : ''))
     : (hasPic ? 'фото есть — ткните в него или в текст' : 'ткните в надпись, чтобы взять её');
+  /* Кнопки прячем видимостью, а не display: место под них остаётся, панель не меняет
+     ни ширину, ни высоту — и карточка не перескакивает в другой ряд во время правки. */
   const show = (act, on) => {
     const bt = boxEl.querySelector('[data-act="' + act + '"]');
-    if (bt) bt.style.display = on ? '' : 'none';
+    if (bt) bt.style.visibility = on ? '' : 'hidden';
   };
   show('pmode', hasPic);
   show('fit', hasPic);
   show('del', !!sel);
+  show('lock', !!sel);
+  const lb = boxEl.querySelector('[data-act="lock"]');
+  if (lb){
+    lb.innerHTML = lk ? UI.lock : UI.unlock;
+    lb.classList.toggle('on', lk);
+    lb.title = lk ? 'снять замок с объекта (L)' : 'запереть объект: не сдвинется (L)';
+  }
   const pm = boxEl.querySelector('[data-act="pmode"]');
   if (pm) pm.title = S.pmode === 'pic' ? 'сейчас двигаем картинку внутри рамки'
                                        : 'сейчас двигаем саму рамку';
@@ -1335,8 +1446,20 @@ function renderFeed(){
    (рубрика, счётчик, цифра, иконка, логотип) тянуть нечего — они двигаются и масштабируются,
    поэтому ручек им не даём. */
 const HND = 26;
-function handlesOf(z){
-  if (!z || z.fixed) return [];
+/* Значок замка у рамки выбранного объекта: сразу видно, почему он не двигается. */
+function lockBadge(ctx, z, th, W, H){
+  const s = 46, k = s / 24;
+  const bx = Math.min(Math.max(z.x + z.w - s / 2, 0), W - s);
+  const by = Math.min(Math.max(z.y - s / 2, 0), H - s);
+  ctx.save();
+  ctx.fillStyle = th.mute; roundRect(ctx, bx, by, s, s, 12); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.strokeRect(bx + k * 6, by + k * 11, k * 12, k * 9);
+  ctx.beginPath(); ctx.arc(bx + k * 12, by + k * 11, k * 4, Math.PI, 0); ctx.stroke();
+  ctx.restore();
+}
+function handlesOf(z, sl){
+  if (!z || z.fixed || isLocked(sl, z.f)) return [];
   /* Ручку, лежащую ровно на границе кадра, мышью не поймать: половина её за пределами
      холста. Поэтому позиции поджимаем внутрь — на смещение при перетаскивании это не влияет. */
   const f = F(), m = HND * 0.62;
@@ -1362,7 +1485,7 @@ function attachStage(boxEl, cv, i){
   const hitHandle = p => {
     const z = selZone(); if (!z) return null;
     const r = HND * 1.1;
-    return handlesOf(z).find(h => Math.abs(p.x - h.x) < r && Math.abs(p.y - h.y) < r) || null;
+    return handlesOf(z, S.slides[i]).find(h => Math.abs(p.x - h.x) < r && Math.abs(p.y - h.y) < r) || null;
   };
   /* с конца: последние нарисованные лежат выше */
   const hit = p => {
@@ -1393,18 +1516,24 @@ function attachStage(boxEl, cv, i){
     } else {
       const z = hit(p);
       if (z){
-        S.sel = {i:i, f:zKey(z)};
-        if (z.pic && S.pmode === 'pic'){
+        const key = zKey(z);
+        S.sel = {i:i, f:key};
+        if (isLocked(sl, key)){
+          drag = null;                 /* объект на замке: выбрать можно, сдвинуть нельзя */
+        } else if (z.pic && S.pmode === 'pic'){
           sl.crop = sl.crop || {x:0, y:0, z:1};
           drag = {kind:'pan', sx:p.x, sy:p.y, c:{x:sl.crop.x, y:sl.crop.y}};
         } else if (z.pic){
           const fr = picFrameEdit(sl, f.w, f.h);
           drag = {kind:'frame', sx:p.x, sy:p.y, base:{x:fr.x, y:fr.y}};
-        } else if (zKey(z) === 'pattern' || zKey(z) === 'rule'){
+        } else if (key === 'pattern' || key === 'rule'){
           drag = null;                 /* фон и линейку можно выбрать и удалить, но тащить нечего */
         } else {
-          drag = {kind:'move', sx:p.x, sy:p.y, f:zKey(z), base:Object.assign({}, offEdit(sl, zKey(z)))};
+          drag = {kind:'move', sx:p.x, sy:p.y, f:key, base:Object.assign({}, offEdit(sl, key))};
         }
+        /* За какое место взяли объект: при переносе в другую карточку он встанет
+           под курсор так же, как лежал под ним здесь. */
+        if (drag){ drag.f = key; drag.gx = p.x - z.x; drag.gy = p.y - z.y; }
       } else {
         S.sel = null;
       }
@@ -1445,18 +1574,31 @@ function attachStage(boxEl, cv, i){
         o.dh = Math.max(-1e5, o.dh);
       }
     }
+    /* Пока тянем за пределами своей карточки — подсвечиваем ту, что под курсором. */
+    if (drag.kind === 'move' || drag.kind === 'pan' || drag.kind === 'frame') aimCard(e, i, drag);
     drawCard(cv, i); paintBar(boxEl, i);
   });
 
-  const stop = () => { if (drag){ drag = null; boxEl.classList.remove('dragging'); save(); } };
-  cv.addEventListener('pointerup', stop);
-  cv.addEventListener('pointercancel', stop);
+  /* Отпустили над другой карточкой — объект туда и переезжает. Отпустили над своей или
+     мимо карточек — остаётся там, куда сдвинули: прежнее поведение. */
+  const finish = (e, ok) => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    boxEl.classList.remove('dragging');
+    const to = AIM; clearAim();
+    if (ok && to != null && canMove(d.f) && transferObj(i, to, d, e)) return;
+    save();
+  };
+  cv.addEventListener('pointerup', e => finish(e, true));
+  cv.addEventListener('pointercancel', () => finish(null, false));
 
   cv.addEventListener('wheel', e => {
     const sl = S.slides[i], p = at(e), z = hit(p);
     if (!z) return;
     e.preventDefault();
     S.sel = {i:i, f:zKey(z)};
+    /* Кегль и масштаб — геометрия: у запертого объекта колесо только выбирает его. */
+    if (isLocked(sl, zKey(z))){ drawCard(cv, i); paintBar(boxEl, i); return; }
     if (z.pic){
       sl.crop = sl.crop || {x:0, y:0, z:1};
       sl.crop.z = clamp(+(sl.crop.z * (e.deltaY < 0 ? 1.06 : .94)).toFixed(3), 0.2, 8);
@@ -1484,11 +1626,152 @@ function attachStage(boxEl, cv, i){
   });
 }
 
+/* ---------------------------------------------------------------------------
+   Перенос объекта в другую карточку. Тащим за пределы своей карточки: та, что под
+   курсором, подсвечивается, у курсора висит ярлык с содержимым. Отпустили — объект
+   переехал и встал туда, где отпустили. Ctrl (⌘) при отпускании оставляет копию.
+   --------------------------------------------------------------------------- */
+const MOVABLE = {title:1, text:1, num:1, unit:1, photo:1, icon:1};
+const canMove = f => !!f && (!!MOVABLE[f] || /^items:\d+$/.test(f));
+const dragText = (i, f) => { const o = fieldOps(S.slides[i], f); return o.get ? o.get() : ''; };
+const cardBox = i => document.querySelector('#cards .cardbox[data-i="' + i + '"]');
+const cardCanvas = i => { const b = cardBox(i); return b ? b.querySelector('canvas') : null; };
+let AIM = null;                        /* номер карточки-приёмника под курсором */
+function clearAim(){
+  if (AIM != null){ const b = cardBox(AIM); if (b) b.classList.remove('tocard'); AIM = null; }
+  const g = $('ghost'); if (g) g.classList.remove('on');
+}
+function aimCard(e, from, d){
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const box = el && el.closest ? el.closest('#cards .cardbox') : null;
+  const j = box ? +box.dataset.i : -1;
+  const to = (j >= 0 && j !== from && canMove(d.f)) ? j : null;
+  if (AIM !== to) clearAim();
+  if (to == null) return;
+  AIM = to; box.classList.add('tocard');
+  const g = $('ghost');
+  const what = d.f === 'photo' ? 'фото' : d.f === 'icon' ? 'иконка'
+             : (String(dragText(from, d.f) || '').trim() || zTitle(d.f));
+  g.textContent = what.slice(0, 48) + '  →  карточка ' + (to + 1);
+  g.style.left = (e.clientX + 16) + 'px';
+  g.style.top = (e.clientY + 16) + 'px';
+  g.classList.add('on');
+}
+/* Точка броска в системе координат карточки-приёмника, за вычетом того, за какое место
+   объект держали. Держим её в кадре: объект не должен уехать за край целиком. */
+function dropAt(to, e, d){
+  const cv = cardCanvas(to); if (!cv || !e) return null;
+  const r = cv.getBoundingClientRect(), f = F(), k = f.w / r.width;
+  return {x:clamp((e.clientX - r.left) * k - (d.gx || 0), -20, f.w - 80),
+          y:clamp((e.clientY - r.top) * k - (d.gy || 0), -20, f.h - 60)};
+}
+/* Смещение, накопленное за перетаскивание, источнику возвращаем: объект уезжает, и
+   оставлять его сдвинутым (а в режиме копии — вообще уехавшим) нельзя. */
+function restoreDrag(sl, d){
+  if (d.kind === 'move' && d.f && d.base){ sl.off = sl.off || {}; sl.off[d.f] = Object.assign({}, d.base); }
+  if (d.kind === 'pan' && d.c) sl.crop = Object.assign({}, sl.crop || {}, {x:d.c.x, y:d.c.y});
+  if (d.kind === 'frame' && d.base && sl.frame){ sl.frame.x = d.base.x; sl.frame.y = d.base.y; }
+}
+/* Куда ляжет содержимое: в поле с тем же именем, если у типа карточки-приёмника такое
+   поле есть. Если нет (у списка нет цифры, у обложки нет пунктов) — в текстовое поле:
+   оно есть у каждой карточки.
+   Смотрим на ТИП карточки, а не на нарисованные зоны: у пустого поля зоны нет, и по зонам
+   заголовок уезжал в текст именно тогда, когда заголовок приёмника свободен. Набор полей —
+   тот же, что показывает редактор слайда слева. */
+const KIND_FIELDS = {
+  cover: {title:1, text:1},
+  text:  {title:1, text:1},
+  number:{title:1, num:1, unit:1, text:1},
+  list:  {title:1, items:1, text:1},
+  cta:   {title:1, items:1, text:1},
+  quote: {title:1, unit:1, text:1},
+  photo: {title:1, text:1}
+};
+function targetField(to, f){
+  const map = KIND_FIELDS[S.slides[to].kind] || {title:1, text:1};
+  if (/^items:/.test(f)) return map.items ? 'items' : 'text';
+  return map[f] ? f : 'text';
+}
+const fieldEmpty = (sl, f) => f === 'items' || !String(sl[f] || '').trim();
+/* Пустое поле содержимое занимает, занятое — дополняет с новой строки. Цифра и единица
+   заменяются: это одно значение, а не абзац. Пункт списка встаёт новым пунктом. */
+function putField(sl, f, val){
+  if (f === 'items'){
+    sl.items = (sl.items || []).filter(t => String(t).trim()).concat([val]);
+    return 'items:' + (sl.items.length - 1);
+  }
+  if (f === 'num' || f === 'unit'){ sl[f] = val; return f; }
+  const cur = String(sl[f] || '');
+  sl[f] = cur.trim() ? cur.replace(/\s+$/, '') + String.fromCharCode(10) + val : val;
+  return f;
+}
+/* Довести объект до точки броска: после перерисовки его рамка известна, разницу кладём
+   в смещение — так он встаёт именно туда, где отпустили. */
+function placeAt(to, f, at){
+  const sl = S.slides[to];
+  const z = (sl._zones || []).find(q => q.f === f);
+  if (!z) return;
+  const o = offEdit(sl, f);
+  o.dx += at.x - z.x; o.dy += at.y - z.y;
+  const cv = cardCanvas(to); if (cv) drawCard(cv, to);
+}
+function transferObj(from, to, d, e){
+  const a = S.slides[from], b = S.slides[to];
+  if (!a || !b || from === to) return false;
+  const copy = !!(e && (e.ctrlKey || e.metaKey));
+  const at = dropAt(to, e, d);
+  restoreDrag(a, d);
+  if (d.f === 'photo'){
+    if (a.img == null) return false;
+    b.img = a.img;
+    b.crop = Object.assign({x:0, y:0, z:1}, a.crop);
+    b.frame = a.frame ? Object.assign({}, a.frame) : null;
+    if (b.frame && at){ b.frame.x = at.x; b.frame.y = at.y; }
+    if (!copy){ a.img = null; a.frame = null; a.crop = {x:0, y:0, z:1}; setLock(a, 'photo', false); }
+    S.sel = {i:to, f:'photo'};
+    renderEds(); renderCards(); save();
+    return true;
+  }
+  if (d.f === 'icon'){
+    if (!a.icon || a.icon === 'none') return false;
+    b.icon = a.icon;
+    if (!copy){ a.icon = 'none'; setLock(a, 'icon', false); }
+    S.sel = {i:to, f:'icon'};
+    renderEds(); renderCards(); save();
+    return true;
+  }
+  const val = String(dragText(from, d.f) || '').trim();
+  if (!val) return false;
+  const tf0 = targetField(to, d.f);
+  const wasEmpty = fieldEmpty(b, tf0);
+  const tf = putField(b, tf0, val);
+  if (!copy){ fieldOps(a, d.f).del(); setLock(a, d.f, false); }
+  /* Рамку и начертание переносим только в пустое поле: иначе сдвинули бы чужой текст. */
+  if (wasEmpty && a.off && a.off[d.f] && !/^items:/.test(tf)){
+    b.off = b.off || {};
+    b.off[tf] = Object.assign({}, a.off[d.f], {dx:0, dy:0});
+  }
+  S.sel = {i:to, f:tf};
+  renderEds(); renderCards();
+  if (wasEmpty && at) placeAt(to, tf, at);
+  save();
+  return true;
+}
+/* Замок на выбранный объект — кнопкой в панели карточки, в панели правки или клавишей L. */
+function toggleLockSel(i){
+  if (!S.sel || (i != null && S.sel.i !== i)) return;
+  const sl = S.slides[S.sel.i]; if (!sl) return;
+  setLock(sl, S.sel.f, !isLocked(sl, S.sel.f));
+  LOCKN = -1; renderCards(); save();
+}
+
 /* Удаление объекта: у надписи вычищается текст, у технической — она уходит в S.hide
-   и возвращается кнопкой в панели, у иконки и фотографии снимается привязка. */
+   и возвращается кнопкой в панели, у иконки и фотографии снимается привязка.
+   Запертый объект не удаляется: сначала замок. */
 function deleteSelected(){
   if (!S.sel || EDITOR) return false;
   const sl = S.slides[S.sel.i]; if (!sl) return false;
+  if (isLocked(sl, S.sel.f)) return false;
   const ops = fieldOps(sl, S.sel.f);
   if (!ops.del) return false;
   ops.del();
@@ -1502,6 +1785,9 @@ addEventListener('keydown', e => {
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   if (e.key === 'Delete' || e.key === 'Backspace'){
     if (deleteSelected()) e.preventDefault();
+  }
+  if (e.code === 'KeyL' && S.sel && !e.ctrlKey && !e.metaKey && !e.altKey){
+    toggleLockSel(null); e.preventDefault();      /* замок на выбранном объекте */
   }
   if (e.key === 'Escape' && S.sel){ S.sel = null; renderCards(); }
 });
@@ -1537,7 +1823,8 @@ function editZone(boxEl, cv, i, z){
                  '<button data-s="i" title="курсив"><i>К</i></button>' +
                  '<button data-s="-" title="мельче">A−</button>' +
                  '<span class="pt"></span>' +
-                 '<button data-s="+" title="крупнее">A+</button>';
+                 '<button data-s="+" title="крупнее">A+</button>' +
+                 '<button data-s="l" title="замок: объект не будет двигаться (L)"></button>';
   boxEl.appendChild(tb);
   boxEl.appendChild(ta);
   EDITOR = ta; EDITOR.tb = tb;
@@ -1549,7 +1836,10 @@ function editZone(boxEl, cv, i, z){
     tb.querySelector('[data-s="b"]').classList.toggle('on', o.b === true ||
       (o.b == null && String(zz.weight) === '700'));
     tb.querySelector('[data-s="i"]').classList.toggle('on', !!o.i);
-    tb.querySelector('.pt').textContent = Math.round(zz.size) + ' px';
+    const lk = isLocked(sl, z.f), lb = tb.querySelector('[data-s="l"]');
+    lb.innerHTML = lk ? UI.lock : UI.unlock;
+    lb.classList.toggle('on', lk);
+    tb.querySelector('.pt').textContent = Math.round(zz.size) + ' px' + (lk ? ' · замок' : '');
     ta.style.fontWeight = (o.b == null ? zz.weight : (o.b ? '700' : '400'));
     ta.style.fontStyle = o.i ? 'italic' : 'normal';
     ta.style.fontSize = Math.max(11, zz.size * k) + 'px';
@@ -1557,8 +1847,11 @@ function editZone(boxEl, cv, i, z){
   tb.querySelectorAll('[data-s]').forEach(bt => bt.onmousedown = ev => {
     ev.preventDefault();                        /* не отдаём фокус: поле остаётся открытым */
     const o = offEdit(sl, z.f), a = bt.dataset.s;
+    if (a === 'l'){ setLock(sl, z.f, !isLocked(sl, z.f)); LOCKN = -1; paintLocks(); }
     if (a === 'b') o.b = o.b == null ? (String(z.weight) !== '700') : !o.b;
     if (a === 'i') o.i = !o.i;
+    /* Кегль меняет геометрию: у запертого объекта он остаётся как есть. */
+    if ((a === '-' || a === '+') && isLocked(sl, z.f)){ paintTb(); return; }
     if (a === '-') o.sc = clamp(+(o.sc / 1.08).toFixed(3), 0.4, 3);
     if (a === '+') o.sc = clamp(+(o.sc * 1.08).toFixed(3), 0.4, 3);
     drawCard(cv, i); paintTb(); paintBar(boxEl, i); save();
@@ -1843,7 +2136,7 @@ function save(){
   try{
     localStorage.setItem('postinsta', JSON.stringify({
       proj:S.proj, fmt:S.fmt, theme:S.theme, pad:S.pad, zoom:S.zoom, demo:S.demo,
-      hide:S.hide, pmode:S.pmode,
+      hide:S.hide, pmode:S.pmode, panel:S.panel,
       brand:S.brand, raw:$('raw').value,
       slides:S.slides.map(s => Object.assign({}, s, {img:null, _zones:null}))  /* картинки и зоны не сериализуем */
     }));
@@ -1860,6 +2153,7 @@ function load(){
     S.demo = !!d.demo;
     S.hide = (d.hide && typeof d.hide === 'object') ? d.hide : {};
     S.pmode = d.pmode === 'frame' ? 'frame' : 'pic';
+    S.panel = !!d.panel;                /* по умолчанию панель убрана: место под карточки */
     S.theme = (d.theme && THEMES[d.theme]) ? d.theme : S.theme;
     Object.assign(S.brand, d.brand || {});
     S.slides = d.slides || [];
@@ -1944,6 +2238,22 @@ function paintHidden(){
                   '</b> — <button class="lnk" id="unhide">вернуть всё</button>';
   $('unhide').onclick = () => { S.hide = {}; paintHidden(); renderCards(); save(); };
 }
+/* Что заперто на замок — и как отпереть всё сразу. Считаем при каждой перерисовке,
+   но разметку переписываем только когда число изменилось: renderCards зовут на каждый
+   символ, и лишняя запись innerHTML тут не нужна. */
+let LOCKN = -1;
+function paintLocks(){
+  const box = $('lockBox'); if (!box) return;
+  let n = 0;
+  S.slides.forEach(s => n += lockKeys(s).length);
+  if (n === LOCKN) return;
+  LOCKN = n;
+  if (!n){ box.innerHTML = ''; box.style.display = 'none'; return; }
+  box.style.display = '';
+  box.innerHTML = 'на замке: <b>' + n + '</b> ' + (n === 1 ? 'объект' : 'объектов') +
+                  ' — <button class="lnk" id="unlockAll">снять все замки</button>';
+  $('unlockAll').onclick = () => { S.slides.forEach(s => s.lk = {}); LOCKN = -1; renderCards(); save(); };
+}
 function padHint(){
   const P = padOf(), g = gridCrop(S.fmt), sf = SAFE[S.fmt];
   $('padVal').textContent = S.pad;
@@ -1967,7 +2277,22 @@ function paintIcons(){
   $('bFeed').innerHTML = UI.grid + '<span>лента</span>';
   $('bCap').innerHTML = UI.wand + '<span>сгенерировать подпись</span>';
   $('bCapCopy').innerHTML = UI.copy + '<span>копировать</span>';
+  $('bPanel').innerHTML = UI.panel + '<span>панель</span>';
 }
+/* Боковая панель по умолчанию убрана — карточкам нужно место. Кнопка «панель» её
+   возвращает, выбор помнится между заходами. Ширины блоков после переключения
+   пересчитываем: рабочая область стала другой. */
+function fitCards(){
+  const w = PREVIEW_W();
+  document.querySelectorAll('#cards .cardbox').forEach(b => b.style.width = w + 'px');
+  document.querySelectorAll('#cards canvas').forEach(c => c.style.width = w + 'px');
+}
+function applyPanel(){
+  document.body.classList.toggle('noleft', !S.panel);
+  $('bPanel').classList.toggle('on', S.panel);
+  fitCards();
+}
+$('bPanel').onclick = () => { S.panel = !S.panel; applyPanel(); save(); };
 $('bProj').onclick = openPick;
 $('bAll').onclick = downloadAll;
 $('bZip').onclick = downloadZip;
@@ -1985,7 +2310,7 @@ $('right').addEventListener('pointerdown', e => {
   if (e.target.id === 'right' && S.sel){ S.sel = null; renderCards(); }
 });
 addEventListener('resize', () => {
-  document.querySelectorAll('#cards canvas').forEach(c => c.style.width = PREVIEW_W() + 'px');
+  fitCards();
   closeEditor();                    /* поле правки было привязано к прежнему масштабу */
 });
 
@@ -2010,6 +2335,7 @@ function loadDemo(){
   paintHidden();
   const had = load();
   $('fPad').value = S.pad;
+  applyPanel();                     /* до первой отрисовки: от панели зависит ширина превью */
   applyProject(S.proj, false);
   if (!had) loadDemo();
   else { renderEds(); renderCards(); makeCaption(); }
