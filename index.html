@@ -907,7 +907,7 @@ const fld = (label, f, v, area) => '<div class="lbl">' + label + '</div>' +
 const inp = (label, f, v) => '<div><div class="lbl">' + label + '</div><input data-f="' + f + '" value="' + esc(v) + '"></div>';
 
 /* ============================================================================
-   7. ЭКСПОРТ: PNG по одной и ZIP пачкой (zip пишем сами, без библиотек)
+   7. ЭКСПОРТ: PNG по одной, пачка отдельными PNG, ZIP (zip пишем сами, без библиотек)
    ============================================================================ */
 function exportCanvas(i){
   const cv = document.createElement('canvas');
