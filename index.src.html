@@ -1100,27 +1100,33 @@ function glassLayer(ctx, bd, x, y, w, h, o){
   lc.drawImage(bd.cv, bd.bp + x / bd.q, bd.bp + y / bd.q, w / bd.q, h / bd.q, 0, 0, lay.width, lay.height);
 
   /* Сколько тона нужно, чтобы белый текст остался белым по контрасту. Решаем уравнение
-     смешения: L*(1-a) + Lтона*a = цель. Границы держат стекло стеклом на фотографии
-     и не дают ему стать прозрачным на светлом фоне. */
+     смешения: L*(1-a) + Lтона*a = цель. Потолок 0,4 стоит по требованию редакции:
+     стекло обязано оставаться стеклом на любом кадре. Поэтому на светлом снимке
+     уравнение не решается — тон упирается в потолок, и контраст добирается не заливкой,
+     а размытием: кадр под полосой перестаёт быть деталями и становится ровным полем,
+     на котором крупный белый заголовок читается. Ниже 0,4 на очень светлом кадре
+     (небо, снег, белая стена) контраст всё равно просядет — это плата за прозрачность,
+     лечится кропом или выбором кадра, а не числом здесь. */
   const lum = meanLum(bd.cv, bd.bp + x / bd.q, bd.bp + y / bd.q, w / bd.q, h / bd.q);
   const tgt = o.target == null ? 86 : o.target;
   let a = (lum - tgt) / Math.max(1, lum - 16);
-  a = Math.max(o.min == null ? .26 : o.min, Math.min(o.max == null ? .74 : o.max, a));
+  a = Math.max(o.min == null ? .12 : o.min, Math.min(o.max == null ? .40 : o.max, a));
 
+  /* Тон ровный. Прежний перепад сверху вниз добавлял плотности внизу полосы и читался
+     как грязь, а не как стекло. */
   const tint = o.tint || '#12141A';
-  const g = lc.createLinearGradient(0, 0, 0, lay.height);
-  g.addColorStop(0, RGBA(tint, a * .84));
-  g.addColorStop(1, RGBA(tint, Math.min(.94, a * 1.1)));
-  lc.fillStyle = g; lc.fillRect(0, 0, lay.width, lay.height);
+  lc.fillStyle = RGBA(tint, a); lc.fillRect(0, 0, lay.width, lay.height);
 
-  /* блик по верхней трети и светлая кромка — то, чем стекло отличается от заливки */
-  const sheenH = Math.max(2, Math.round(lay.height * .38));
+  /* Тонкий блик по верхней кромке и волосяная светлая линия — то, чем стекло отличается
+     от заливки. Блик держим коротким и слабым: широкий белый градиент по трети высоты
+     как раз и давал ощущение мутной плёнки. */
+  const sheenH = Math.max(2, Math.round(lay.height * .18));
   const sh = lc.createLinearGradient(0, 0, 0, sheenH);
-  sh.addColorStop(0, 'rgba(255,255,255,.17)');
+  sh.addColorStop(0, 'rgba(255,255,255,.10)');
   sh.addColorStop(1, 'rgba(255,255,255,0)');
   lc.fillStyle = sh; lc.fillRect(0, 0, lay.width, sheenH);
   const edge = Math.max(1, Math.round(o.edge == null ? 3 : o.edge));
-  lc.fillStyle = 'rgba(255,255,255,.34)'; lc.fillRect(0, 0, lay.width, edge);
+  lc.fillStyle = 'rgba(255,255,255,.28)'; lc.fillRect(0, 0, lay.width, edge);
   return lay;
 }
 
@@ -1200,9 +1206,9 @@ function plateCover(ctx, s, W, H, th, b, onPhoto){
   /* Полоса заголовка и плашка аккаунта — стекло: кадр под ними виден размытым.
      Подложку снимаем один раз на обе плашки: они не перекрываются, и второй снимок
      дал бы те же пиксели за вдвое большие деньги. */
-  const bd = glassBackdrop(ctx.canvas, R(44));
+  const bd = glassBackdrop(ctx.canvas, R(64));
   ctx.drawImage(glassLayer(ctx, bd, 0, bandY, W, bandH,
-                           {tint:pl.band, target:84, min:.28, max:.76, edge:R(3)}), 0, bandY);
+                           {tint:pl.band, target:84, min:.16, max:.40, edge:R(3)}), 0, bandY);
 
   /* заголовок капителью; рамка = вся полоса, поэтому ручка снизу тянет именно её */
   drawLines(ctx, fo, pad + O.dx, bandY + R(22) + O.dy, '#fff');
@@ -1248,7 +1254,7 @@ function plateCover(ctx, s, W, H, th, b, onPhoto){
     font(ctx, '700', fsz);
     const tw = ctx.measureText(b.handle || '').width, chipW = tw + R(150);
     const lay = glassLayer(ctx, bd, oh.dx, oh.dy, chipW, chipH,
-                           {tint:pl.chip, target:82, min:.30, max:.76, edge:R(2)});
+                           {tint:pl.chip, target:82, min:.18, max:.40, edge:R(2)});
     const lc = lay.getContext('2d');
     lc.globalCompositeOperation = 'destination-out';
     const fade = lc.createLinearGradient(0, 0, lay.width, 0);
