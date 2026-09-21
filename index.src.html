@@ -328,7 +328,10 @@ body.picking #pick{display:grid}
         <label class="fld">хвост подписи к посту
           <textarea id="fCapTail" class="ta"></textarea>
         </label>
-        <label class="fld only-turmush">строка под заставкой<input id="fFoot" value=""></label>
+        <div class="grid2">
+          <label class="fld">строка под заставкой (сайт)<input id="fFoot" value=""></label>
+          <label class="fld">соцсеть в строке<input id="fSocial" value=""></label>
+        </div>
       </div>
     </details>
 
@@ -448,6 +451,7 @@ const UI = {
 };
 const KINDS = {
   cover: 'обложка / хук',
+  band:  'заголовок на плашке',
   text:  'текст',
   number:'крупная цифра',
   list:  'список фактов',
@@ -519,19 +523,25 @@ const LOGO_RATIO = {tazabek:1569 / 345, turmush:1271 / 277};
 const PROJECTS = {
   tazabek:{
     t:'Tazabek', logo:'tazabek', cover:'plain', site:'tazabek.kg', tag:'#tazabek',
+    /* цвета обложки-плашки сняты пипеткой с редакционного образца, а не подобраны:
+       полоса #383838, красная строка #9A1B1F — это не фирменный #9a2d25, и подменять
+       его здесь нельзя, иначе карточка перестанет совпадать с печатными плашками. */
+    plate:{band:'#383838', strip:'#9A1B1F', chip:'#2B2B2B'},
     about:'Стиль делового портала: фирменный красный #9a2d25, светлая, тёмная и бумажная темы.',
     dots:['#9a2d25', '#F4F5F7', '#121212'],
     themes:['tazabek', 'noir', 'paper'],
     lang:'ru',
     demo:{title:'Вставьте заголовок новости',
           text:'Первая строка текста станет заголовком, предложения с цифрами — карточками с крупной цифрой.'},
-    brand:{mark:'T', rubric:'экономика', handle:'@tazabek', date:'', source:'Источник: ', foot:'',
+    brand:{mark:'T', rubric:'экономика', handle:'@tazabek_kg', date:'', source:'Источник: ',
+           foot:'WWW.TAZABEK.KG', social:'TAZABEK_OFFICIAL',
            swipe:'листайте  →', ctaTitle:'Полный материал — на tazabek.kg',
            ctaItems:'Сохраните, чтобы вернуться к цифрам\nОтправьте тому, кому это по работе',
            capTail:'Полный материал — по ссылке в профиле. Сохраните пост, если цифры пригодятся в работе.'}
   },
   turmush:{
     t:'Turmush', logo:'turmush', cover:'band', site:'turmush.kg', tag:'#turmush',
+    plate:{band:'#110B1A', strip:'#7952B3', chip:'#110B1A'},
     about:'Акцент #7952B3 и мягкий #f1ddff. Обложка — заставка поверх фото: плашка с аккаунтом, полоса заголовка, строка сайта.',
     dots:['#7952B3', '#F1DDFF', '#121212'],
     themes:['turmush_clean', 'turmush', 'turmush_lilac', 'turmush_dark'],
@@ -542,7 +552,7 @@ const PROJECTS = {
     /* Turmush — кыргыз тилиндеги басылма, поэтому у него по умолчанию кыргызские надписи.
        Все они правятся в разделе «технические надписи»: формулировки предложены, а не утверждены. */
     brand:{mark:'T', rubric:'экономика', handle:'@turmush.akipress', date:'', source:'Булагы: ',
-           foot:'АКЫРКЫ ЖАҢЫЛЫКТАР WWW.TURMUSH.KG САЙТЫНДА',
+           foot:'АКЫРКЫ ЖАҢЫЛЫКТАР WWW.TURMUSH.KG САЙТЫНДА', social:'TURMUSH.AKIPRESS',
            swipe:'сүрүңүз  →', ctaTitle:'Толук материал — turmush.kg сайтында',
            ctaItems:'Сактап коюңуз, сандар керек болот\nКесиптешиңизге жөнөтүңүз',
            capTail:'Толук материал — профилдеги шилтемеде. Сандар керек болсо, постту сактап коюңуз.'}
@@ -557,7 +567,8 @@ const S = {
   hide:{}, pmode:'pic',        /* pmode: чем двигаем — картинкой внутри рамки или самой рамкой */
   panel:false,                 /* боковая панель: по умолчанию убрана, место отдано карточкам */
   demo:true,
-  brand:{mark:'T', rubric:'экономика', handle:'@tazabek', date:'', source:'Источник: ', foot:'',
+  brand:{mark:'T', rubric:'экономика', handle:'@tazabek_kg', date:'', source:'Источник: ',
+         foot:'WWW.TAZABEK.KG', social:'TAZABEK_OFFICIAL',
          swipe:'листайте  →', ctaTitle:'Полный материал — на tazabek.kg',
          ctaItems:'Сохраните, чтобы вернуться к цифрам\nОтправьте тому, кому это по работе',
          capTail:'Полный материал — по ссылке в профиле. Сохраните пост, если цифры пригодятся в работе.'},
@@ -819,7 +830,8 @@ function fieldOps(sl, key){
 const ZTITLE = {logo:'логотип', counter:'счётчик', rule:'линейка', pattern:'фон', icon:'иконка',
                 photo:'фото', title:'заголовок', text:'текст', num:'цифра', unit:'единица',
                 'brand.rubric':'рубрика', 'brand.source':'источник', 'brand.swipe':'подсказка',
-                'brand.handle':'аккаунт', 'brand.date':'дата', 'brand.foot':'строка сайта'};
+                'brand.handle':'аккаунт', 'brand.date':'дата', 'brand.foot':'строка сайта',
+                'brand.social':'соцсеть'};
 const zTitle = k => ZTITLE[k] || (/^items:/.test(k) ? 'пункт ' + (+k.split(':')[1] + 1) : k);
 const zoneValue = (sl, z) => { const o = fieldOps(sl, z.f); return o.get ? o.get() : ''; };
 const zoneSet = (sl, z, v) => { const o = fieldOps(sl, z.f); if (o.set) o.set(v); };
@@ -999,6 +1011,156 @@ function turmushCover(ctx, s, W, H, th, b, onPhoto){
   return phs;
 }
 
+/* ----------------------------------------------------------------------------
+   Обложка-плашка (тип карточки «заголовок на плашке»).
+
+   Собрана по редакционному образцу Tazabek: плашка с аккаунтом в левом верхнем углу,
+   тёмная полоса заголовка внизу, под ней красная строка «сайт + соцсеть».
+   Цвета сняты пипеткой с образца (полоса #383838, строка #9A1B1F, плашка чёрная
+   с растушёвкой вправо), геометрия — оттуда же.
+
+   Кегли подняты относительно образца сознательно: в образце красная строка идёт
+   28 px на кадре 1080 — на телефоне это шум. Здесь пол для основного текста 40 px
+   (его держит fit(), MINPT), для технических надписей — 24 px.
+
+   Высота полосы считается ОТ ЗАГОЛОВКА, а не задана числом: длинный заголовок
+   растит полосу, а не ужимается до нечитаемого кегля. Упёрлись в кадр — тогда
+   уже уменьшается кегль. Ручка снизу тянет ту же полосу (поле dh заголовка).
+   ---------------------------------------------------------------------------- */
+const RGBA = (hex, a) => {
+  const n = parseInt(String(hex).slice(1), 16);
+  return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')';
+};
+/* Иконки красной строки. Глобус берём из общего набора, птица нарисована здесь же
+   в той же системе 24x24 — своя геометрия, чужих логотипов на карточке нет. */
+const PLATE_ICONS = {
+  globe: ICONS.globe.d,
+  bird:  'M3.2 16.6c3.3 1.3 7 .8 9.5-1.4 2.4-2.1 3.4-5.2 3.1-8l2.9-3.1-3.8.7c-1.1-1.3-2.9-1.9-4.6-1.4C8.3 3.9 7.1 5.6 7.3 7.4 5 7.2 2.9 6 1.6 4.1.8 6.2 1.4 8.6 3.1 10c-.6 0-1.3-.2-1.8-.5.1 1.9 1.4 3.5 3.2 3.9-.6.2-1.3.2-2 .1'
+};
+function plateIcon(ctx, name, x, y, size, color){
+  const d = PLATE_ICONS[name];
+  if (!d) return;
+  ctx.save();
+  ctx.translate(x, y); ctx.scale(size / 24, size / 24);
+  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.stroke(new Path2D(d));
+  ctx.restore();
+}
+function plateCover(ctx, s, W, H, th, b, onPhoto){
+  const pl = (PJ().plate || PROJECTS.tazabek.plate);
+  const k = H / 1350, R = v => Math.round(v * k);
+  let phs = null;                       /* место под пустое текстовое поле, если лид не занят */
+  const O = offOf(s, 'title');
+  const pad = R(46);
+  const lift = S.fmt === '9x16' ? R(330) : 0;   /* в сторис нижние 400 px закрывает интерфейс */
+
+  /* красная строка: сайт и соцсеть — две самостоятельные надписи, каждая берётся и
+     удаляется отдельно. Обе пусты — строки нет вовсе, а не пустая красная полоса. */
+  const site = String(b.foot || ''), soc = String(b.social || '');
+  const hasSite = !hidden('brand.foot') && !!site.trim();
+  const hasSoc  = !hidden('brand.social') && !!soc.trim();
+  const strip = (hasSite || hasSoc) ? R(76) : 0;
+
+  /* «Источник: » без самого источника — не подпись, а обрубок префикса: на обложке
+     он выглядел бы браком, поэтому строка появляется только с содержанием. */
+  const srcTail = String(b.source || '').replace(/^[^:]{0,24}:\s*/, '').trim();
+  const srcH = (hidden('brand.source') || !srcTail) ? 0 : R(44);
+
+  /* сначала набираем заголовок: от его высоты зависит полоса */
+  const titleW = Math.max(R(300), W - pad * 2 + O.dw);
+  ctx.__w = '700';
+  const bandMax = H - strip - lift - R(220);
+  let fo = fit(ctx, (s.title || '').toUpperCase(), titleW, 1e7,
+               sc1(R(64), O.sc), sc1(R(44), O.sc), 1.1, '700');
+  let textH = fo.lines.length * fo.size * fo.lh;
+  let bandH = Math.max(R(128), textH + R(46) + srcH + O.dh);
+  if (bandH > bandMax){                       /* упёрлись в кадр — теперь уже сжимаем кегль */
+    fo = fit(ctx, (s.title || '').toUpperCase(), titleW, bandMax - R(46) - srcH,
+             sc1(R(64), O.sc), sc1(R(40), O.sc), 1.1, '700');
+    textH = fo.lines.length * fo.size * fo.lh;
+    bandH = bandMax;
+  }
+  const bandY = H - strip - bandH - lift;
+
+  /* середина кадра принадлежит фотографии. Без неё туда идёт лид, а нет лида —
+     заготовка «Текст…», её рисует уже drawCard: он один знает, экран это или файл. */
+  if (!onPhoto && (s.text || '').trim()){
+    const OL = offOf(s, 'text');
+    ctx.__w = '400';
+    const lead = fit(ctx, s.text, Math.max(R(300), W - pad * 2 + OL.dw), bandY - R(320) + OL.dh,
+                     sc1(R(46), OL.sc), sc1(R(40), OL.sc), 1.34, '400');
+    drawLines(ctx, lead, pad + OL.dx, R(210) + OL.dy, th.ink);
+    if (ZONES) ZONES.push({f:'text', x:pad + OL.dx, y:R(210) + OL.dy,
+                           w:Math.max(R(300), W - pad * 2 + OL.dw),
+                           h:Math.max(lead.size, lead.lines.length * lead.size * lead.lh),
+                           size:lead.size, lh:1.34, weight:'400'});
+  } else if (!onPhoto){
+    phs = {x:pad, y:R(210), w:Math.max(R(300), W - pad * 2), size:R(46), lh:1.34, weight:'400'};
+  }
+
+  /* короткая растушёвка над полосой — она есть и в образце: на фотографии стык не
+     читается как линейка, на светлом фоне работает мягкой тенью */
+  const sh = ctx.createLinearGradient(0, bandY - R(62), 0, bandY);
+  sh.addColorStop(0, RGBA(pl.band, 0));
+  sh.addColorStop(1, RGBA(pl.band, .92));
+  ctx.fillStyle = sh; ctx.fillRect(0, bandY - R(62), W, R(62));
+
+  /* полоса заголовка — плотная по всей ширине, как в образце */
+  ctx.fillStyle = pl.band; ctx.fillRect(0, bandY, W, bandH);
+
+  /* заголовок капителью; рамка = вся полоса, поэтому ручка снизу тянет именно её */
+  drawLines(ctx, fo, pad + O.dx, bandY + R(22) + O.dy, '#fff');
+  if (ZONES) ZONES.push({f:'title', x:pad + O.dx, y:bandY + R(18) + O.dy, w:titleW,
+                         h:Math.max(textH, bandH - R(26) - srcH), size:fo.size, lh:1.1, weight:'700'});
+
+  if (srcH){
+    font(ctx, '400', R(26)); ctx.fillStyle = 'rgba(255,255,255,.80)'; ctx.textAlign = 'left';
+    ctx.fillText(String(b.source || ''), pad, bandY + bandH - R(22));
+    if (ZONES) ZONES.push({f:'brand.source', x:pad, y:bandY + bandH - R(48), w:W - pad * 2, h:R(36),
+                           size:R(26), lh:1.1, weight:'400', fixed:true});
+  }
+
+  /* красная строка: иконка + надпись, пара по центру кадра */
+  if (strip){
+    ctx.fillStyle = pl.strip; ctx.fillRect(0, bandY + bandH, W, strip);
+    const fs = R(28), isz = R(32), gapIT = R(14), gapII = R(78);
+    const items = [];
+    if (hasSite) items.push({f:'brand.foot',   ic:'globe', t:site.toUpperCase()});
+    if (hasSoc)  items.push({f:'brand.social', ic:'bird',  t:soc.toUpperCase()});
+    font(ctx, '700', fs);
+    let total = gapII * (items.length - 1);
+    items.forEach(it => { it.w = isz + gapIT + ctx.measureText(it.t).width; total += it.w; });
+    let sx = Math.max(R(24), (W - total) / 2);
+    const sy = bandY + bandH + strip / 2;
+    items.forEach(it => {
+      plateIcon(ctx, it.ic, sx, sy - isz / 2, isz, '#fff');
+      font(ctx, '700', fs); ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+      ctx.fillText(it.t, sx + isz + gapIT, sy + fs * .35);
+      if (ZONES) ZONES.push({f:it.f, x:sx, y:bandY + bandH + R(10), w:it.w, h:strip - R(20),
+                             size:fs, lh:1.1, weight:'700', fixed:true});
+      sx += it.w + gapII;
+    });
+  }
+
+  /* плашка с аккаунтом вплотную к углу, растушёвка вправо — как в образце */
+  if (!hidden('brand.handle')){
+    const oh = offOf(s, 'brand.handle');
+    const chipH = R(78), fsz = Math.max(24, sc1(R(46), oh.sc));
+    font(ctx, '700', fsz);
+    const tw = ctx.measureText(b.handle || '').width, chipW = tw + R(150);
+    const cg = ctx.createLinearGradient(oh.dx, 0, oh.dx + chipW, 0);
+    cg.addColorStop(0,   RGBA(pl.chip, .97));
+    cg.addColorStop(.58, RGBA(pl.chip, .95));
+    cg.addColorStop(1,   RGBA(pl.chip, 0));
+    ctx.fillStyle = cg; ctx.fillRect(oh.dx, oh.dy, chipW, chipH);
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+    ctx.fillText(b.handle || '', oh.dx + R(24), oh.dy + chipH / 2 + fsz * .36);
+    if (ZONES) ZONES.push({f:'brand.handle', x:oh.dx, y:oh.dy, w:tw + R(48), h:chipH,
+                           size:fsz, lh:1.1, weight:'700', fixed:true});
+  }
+  return phs;
+}
+
 function drawCard(cv, i, opts){
   opts = opts || {};
   const s = S.slides[i], n = S.slides.length, f = F(), th = T();
@@ -1013,7 +1175,10 @@ function drawCard(cv, i, opts){
   const pic = s.img != null && S.images[s.img] ? S.images[s.img].img : null;
   const fr = pic ? picFrame(s, W, H) : null;
   const bare = !!th.bare;                       /* чистый холст: ни одной технической надписи */
-  const zastavka = PJ().cover === 'band' && s.kind === 'cover';
+  /* заставка = обложка во всю карточку: своя шапка и свой подвал, поэтому общие
+     рубрика, счётчик и линейка на ней не рисуются. Их две — своя у Turmush и новая
+     плашка Tazabek, её ставит на любую карточку тип «заголовок на плашке». */
+  const zastavka = (PJ().cover === 'band' && s.kind === 'cover') || s.kind === 'band';
   const onPhoto = !!(pic && fr.full && fr.fit === 'cover');
   const ink = onPhoto ? '#fff' : th.ink;
   const mute = onPhoto ? 'rgba(255,255,255,.85)' : th.mute;
@@ -1116,7 +1281,8 @@ function drawCard(cv, i, opts){
   let y = top, phSlot = null;      /* phSlot — где стояло бы текстовое поле, будь в нём текст */
 
   if (zastavka){
-    phSlot = turmushCover(ctx, s, W, H, th, b, !!onPhoto);
+    phSlot = s.kind === 'band' ? plateCover(ctx, s, W, H, th, b, !!onPhoto)
+                               : turmushCover(ctx, s, W, H, th, b, !!onPhoto);
 
   } else if (s.kind === 'cover'){
     const hasDate = !!(b.date || '').trim();
@@ -1680,6 +1846,7 @@ function restoreDrag(sl, d){
    тот же, что показывает редактор слайда слева. */
 const KIND_FIELDS = {
   cover: {title:1, text:1},
+  band:  {title:1, text:1},
   text:  {title:1, text:1},
   number:{title:1, num:1, unit:1, text:1},
   list:  {title:1, items:1, text:1},
@@ -2156,6 +2323,15 @@ function load(){
     S.panel = !!d.panel;                /* по умолчанию панель убрана: место под карточки */
     S.theme = (d.theme && THEMES[d.theme]) ? d.theme : S.theme;
     Object.assign(S.brand, d.brand || {});
+    /* Строка сайта и соцсеть появились вместе с обложкой-плашкой. У Tazabek строка сайта
+       до этого была пустой, и сохранение затирало бы ею новое умолчание — поэтому при
+       первом заходе после обновления пустые поля берутся из проекта. Дальше это обычные
+       поля: правки пользователя сохраняются, удаление идёт через сам объект на карточке. */
+    if (!d.brand || d.brand.social === undefined){
+      const pb = (PROJECTS[S.proj] || PROJECTS.tazabek).brand;
+      if (!String(S.brand.foot || '').trim()) S.brand.foot = pb.foot || '';
+      S.brand.social = pb.social || '';
+    }
     S.slides = d.slides || [];
     /* до появления объектов рамка была одна на слайд ({dx,dy,dw,sc}); такие сбрасываем,
        иначе смещение уехало бы в поле с именем «dx» */
@@ -2168,10 +2344,12 @@ function syncBrandInputs(){
   $('fRubric').value = S.brand.rubric;
   $('fHandle').value = S.brand.handle; $('fDate').value = S.brand.date;
   $('fSource').value = S.brand.source; $('fFoot').value = S.brand.foot || '';
+  $('fSocial').value = S.brand.social || '';
   $('fSwipe').value = S.brand.swipe || ''; $('fCtaTitle').value = S.brand.ctaTitle || '';
   $('fCtaItems').value = S.brand.ctaItems || ''; $('fCapTail').value = S.brand.capTail || '';
 }
-[['fRubric','rubric'],['fHandle','handle'],['fDate','date'],['fSource','source'],['fFoot','foot'],['fSwipe','swipe'],['fCtaTitle','ctaTitle'],
+[['fRubric','rubric'],['fHandle','handle'],['fDate','date'],['fSource','source'],['fFoot','foot'],
+  ['fSocial','social'],['fSwipe','swipe'],['fCtaTitle','ctaTitle'],
   ['fCtaItems','ctaItems'],['fCapTail','capTail']]
   .forEach(([id, k]) => $(id).addEventListener('input', () => {
     S.brand[k] = $(id).value; renderCards(); save();
