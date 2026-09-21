@@ -527,6 +527,7 @@ const PROJECTS = {
        полоса #383838, красная строка #9A1B1F — это не фирменный #9a2d25, и подменять
        его здесь нельзя, иначе карточка перестанет совпадать с печатными плашками. */
     plate:{band:'#383838', strip:'#9A1B1F', chip:'#2B2B2B'},
+    coverKind:'band',          /* чем открывается карусель: у Tazabek — обложкой-плашкой */
     about:'Стиль делового портала: фирменный красный #9a2d25, светлая, тёмная и бумажная темы.',
     dots:['#9a2d25', '#F4F5F7', '#121212'],
     themes:['tazabek', 'noir', 'paper'],
@@ -542,6 +543,7 @@ const PROJECTS = {
   turmush:{
     t:'Turmush', logo:'turmush', cover:'band', site:'turmush.kg', tag:'#turmush',
     plate:{band:'#110B1A', strip:'#7952B3', chip:'#110B1A'},
+    coverKind:'cover',         /* у Turmush заставку рисует сам тип «обложка» — см. cover:'band' */
     about:'Акцент #7952B3 и мягкий #f1ddff. Обложка — заставка поверх фото: плашка с аккаунтом, полоса заголовка, строка сайта.',
     dots:['#7952B3', '#F1DDFF', '#121212'],
     themes:['turmush_clean', 'turmush', 'turmush_lilac', 'turmush_dark'],
@@ -578,6 +580,9 @@ const $ = id => document.getElementById(id);
 const F = () => FORMATS[S.fmt];
 const T = () => THEMES[S.theme];
 const PJ = () => PROJECTS[S.proj];
+/* Тип первой карточки задаёт проект: у Tazabek это обложка-плашка, у Turmush —
+   обычная «обложка», которую его же стиль и рисует заставкой. */
+const coverKind = () => (PJ().coverKind && KINDS[PJ().coverKind]) ? PJ().coverKind : 'cover';
 
 /* ============================================================================
    3. РАЗБОР ТЕКСТА НА СЛАЙДЫ
@@ -653,7 +658,7 @@ function buildSlides(raw, want){
   /* на чистом холсте автосборка не ставит даже иконок: белый лист должен быть белым.
      Иконку в этом режиме можно выбрать руками — рисоваться она будет. */
   const dec = !T().bare;
-  out.push({kind:'cover', title:shorten(head, 110), text:shorten(lead, 130), icon:'none', img:null});
+  out.push({kind:coverKind(), title:shorten(head, 110), text:shorten(lead, 130), icon:'none', img:null});
   const used = new Set();
   /* цифровые слайды: сначала предложения с единицей измерения — там настоящая новость */
   withNum.sort((a, b) => firstNumber(b).score - firstNumber(a).score);
@@ -1031,19 +1036,113 @@ const RGBA = (hex, a) => {
   const n = parseInt(String(hex).slice(1), 16);
   return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')';
 };
-/* Иконки красной строки. Глобус берём из общего набора, птица нарисована здесь же
-   в той же системе 24x24 — своя геометрия, чужих логотипов на карточке нет. */
+/* ----------------------------------------------------------------------------
+   «Жидкое стекло» для плашек обложки.
+
+   Плашка не закрашивает кадр, а размывает его под собой и подкрашивает ровно
+   настолько, чтобы белый текст читался. Насыщенность тона считается ОТ САМОГО КАДРА:
+   на тёмном снимке стекло почти прозрачное, на светлой фотографии темнеет — фиксированная
+   заливка не умеет ни того, ни другого, и любое одно число либо душит кадр, либо теряет
+   заголовок. Canvas не знает backdrop-filter, поэтому подложку копируем сами:
+   ctx.filter = blur() по уменьшенной копии кадра.
+   ---------------------------------------------------------------------------- */
+
+/* Подложка: уменьшенная втрое и размытая копия карточки. Уменьшение — не экономия
+   на глаз, а на счёт: размытие в 40 px по кадру 1080x1350 на каждое нажатие клавиши
+   в восьми карточках заметно тормозит, а при таком радиусе третий масштаб от полного
+   не отличить. Края растягиваются наружу: иначе размытие поймает прозрачность по
+   периметру и по низу карточки пойдёт светлая кайма. */
+function glassBackdrop(cv, blur){
+  const W = cv.width, H = cv.height, q = 3, bp = Math.ceil(blur * 1.2);
+  const iw = Math.ceil(W / q), ih = Math.ceil(H / q);
+  const src = document.createElement('canvas');
+  src.width = iw + bp * 2; src.height = ih + bp * 2;
+  const c = src.getContext('2d');
+  c.drawImage(cv, bp, bp, iw, ih);
+  c.drawImage(cv, 0, 0, W, 2, bp, 0, iw, bp);
+  c.drawImage(cv, 0, H - 2, W, 2, bp, bp + ih, iw, bp);
+  c.drawImage(cv, 0, 0, 2, H, 0, bp, bp, ih);
+  c.drawImage(cv, W - 2, 0, 2, H, bp + iw, bp, bp, ih);
+  c.drawImage(cv, 0, 0, 2, 2, 0, 0, bp, bp);
+  c.drawImage(cv, W - 2, 0, 2, 2, bp + iw, 0, bp, bp);
+  c.drawImage(cv, 0, H - 2, 2, 2, 0, bp + ih, bp, bp);
+  c.drawImage(cv, W - 2, H - 2, 2, 2, bp + iw, bp + ih, bp, bp);
+  const out = document.createElement('canvas');
+  out.width = src.width; out.height = src.height;
+  const oc = out.getContext('2d');
+  oc.filter = 'blur(' + (blur / q) + 'px)';
+  oc.drawImage(src, 0, 0);
+  oc.filter = 'none';
+  return {cv:out, q:q, bp:bp};
+}
+/* Средняя светлота участка кадра. Считаем по копии 24x8: точное значение здесь не нужно,
+   нужен ответ «светло или темно», а getImageData по полосе 1080 px на каждый символ дорог. */
+function meanLum(cv, x, y, w, h){
+  try{
+    const s = document.createElement('canvas');
+    s.width = 24; s.height = 8;
+    const sc = s.getContext('2d', {willReadFrequently:true});
+    sc.drawImage(cv, x, y, w, h, 0, 0, 24, 8);
+    const d = sc.getImageData(0, 0, 24, 8).data;
+    let sum = 0;
+    for (let i = 0; i < d.length; i += 4) sum += .2126 * d[i] + .7152 * d[i + 1] + .0722 * d[i + 2];
+    return sum / (d.length >> 2);
+  }catch(e){ return 128; }     /* кадр читать нельзя — берём середину, стекло останется плотным */
+}
+/* Слой стекла: размытая подложка + тон + блик и кромка сверху. Возвращаем отдельным
+   холстом, а не рисуем сразу: плашке аккаунта нужно ещё растворить правый край, а
+   растворять надо всё стекло целиком, а не подкрашивать поверх уже положенного. */
+function glassLayer(ctx, bd, x, y, w, h, o){
+  o = o || {};
+  const lay = document.createElement('canvas');
+  lay.width = Math.max(1, Math.round(w)); lay.height = Math.max(1, Math.round(h));
+  const lc = lay.getContext('2d');
+  lc.drawImage(bd.cv, bd.bp + x / bd.q, bd.bp + y / bd.q, w / bd.q, h / bd.q, 0, 0, lay.width, lay.height);
+
+  /* Сколько тона нужно, чтобы белый текст остался белым по контрасту. Решаем уравнение
+     смешения: L*(1-a) + Lтона*a = цель. Границы держат стекло стеклом на фотографии
+     и не дают ему стать прозрачным на светлом фоне. */
+  const lum = meanLum(bd.cv, bd.bp + x / bd.q, bd.bp + y / bd.q, w / bd.q, h / bd.q);
+  const tgt = o.target == null ? 86 : o.target;
+  let a = (lum - tgt) / Math.max(1, lum - 16);
+  a = Math.max(o.min == null ? .26 : o.min, Math.min(o.max == null ? .74 : o.max, a));
+
+  const tint = o.tint || '#12141A';
+  const g = lc.createLinearGradient(0, 0, 0, lay.height);
+  g.addColorStop(0, RGBA(tint, a * .84));
+  g.addColorStop(1, RGBA(tint, Math.min(.94, a * 1.1)));
+  lc.fillStyle = g; lc.fillRect(0, 0, lay.width, lay.height);
+
+  /* блик по верхней трети и светлая кромка — то, чем стекло отличается от заливки */
+  const sheenH = Math.max(2, Math.round(lay.height * .38));
+  const sh = lc.createLinearGradient(0, 0, 0, sheenH);
+  sh.addColorStop(0, 'rgba(255,255,255,.17)');
+  sh.addColorStop(1, 'rgba(255,255,255,0)');
+  lc.fillStyle = sh; lc.fillRect(0, 0, lay.width, sheenH);
+  const edge = Math.max(1, Math.round(o.edge == null ? 3 : o.edge));
+  lc.fillStyle = 'rgba(255,255,255,.34)'; lc.fillRect(0, 0, lay.width, edge);
+  return lay;
+}
+
+/* Иконки красной строки в той же системе 24x24, что и весь набор. Глобус — контурный,
+   из общего набора. Соцсеть — заливка: после переименования Twitter в x.com птица
+   устарела, на её месте косой крест. Он собран здесь из двух перекрещенных планок —
+   своя геометрия, а не вектор чужого логотипа. */
 const PLATE_ICONS = {
-  globe: ICONS.globe.d,
-  bird:  'M3.2 16.6c3.3 1.3 7 .8 9.5-1.4 2.4-2.1 3.4-5.2 3.1-8l2.9-3.1-3.8.7c-1.1-1.3-2.9-1.9-4.6-1.4C8.3 3.9 7.1 5.6 7.3 7.4 5 7.2 2.9 6 1.6 4.1.8 6.2 1.4 8.6 3.1 10c-.6 0-1.3-.2-1.8-.5.1 1.9 1.4 3.5 3.2 3.9-.6.2-1.3.2-2 .1'
+  globe: {d:ICONS.globe.d, fill:false},
+  x:     {d:'M2 2.4h5.2L22 21.6h-5.2zM16.8 2.4H22L7.2 21.6H2z', fill:true}
 };
 function plateIcon(ctx, name, x, y, size, color){
-  const d = PLATE_ICONS[name];
-  if (!d) return;
+  const ic = PLATE_ICONS[name];
+  if (!ic) return;
   ctx.save();
   ctx.translate(x, y); ctx.scale(size / 24, size / 24);
-  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-  ctx.stroke(new Path2D(d));
+  if (ic.fill){
+    ctx.fillStyle = color; ctx.fill(new Path2D(ic.d));
+  } else {
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.stroke(new Path2D(ic.d));
+  }
   ctx.restore();
 }
 function plateCover(ctx, s, W, H, th, b, onPhoto){
@@ -1098,15 +1197,12 @@ function plateCover(ctx, s, W, H, th, b, onPhoto){
     phs = {x:pad, y:R(210), w:Math.max(R(300), W - pad * 2), size:R(46), lh:1.34, weight:'400'};
   }
 
-  /* короткая растушёвка над полосой — она есть и в образце: на фотографии стык не
-     читается как линейка, на светлом фоне работает мягкой тенью */
-  const sh = ctx.createLinearGradient(0, bandY - R(62), 0, bandY);
-  sh.addColorStop(0, RGBA(pl.band, 0));
-  sh.addColorStop(1, RGBA(pl.band, .92));
-  ctx.fillStyle = sh; ctx.fillRect(0, bandY - R(62), W, R(62));
-
-  /* полоса заголовка — плотная по всей ширине, как в образце */
-  ctx.fillStyle = pl.band; ctx.fillRect(0, bandY, W, bandH);
+  /* Полоса заголовка и плашка аккаунта — стекло: кадр под ними виден размытым.
+     Подложку снимаем один раз на обе плашки: они не перекрываются, и второй снимок
+     дал бы те же пиксели за вдвое большие деньги. */
+  const bd = glassBackdrop(ctx.canvas, R(44));
+  ctx.drawImage(glassLayer(ctx, bd, 0, bandY, W, bandH,
+                           {tint:pl.band, target:84, min:.28, max:.76, edge:R(3)}), 0, bandY);
 
   /* заголовок капителью; рамка = вся полоса, поэтому ручка снизу тянет именно её */
   drawLines(ctx, fo, pad + O.dx, bandY + R(22) + O.dy, '#fff');
@@ -1126,14 +1222,15 @@ function plateCover(ctx, s, W, H, th, b, onPhoto){
     const fs = R(28), isz = R(32), gapIT = R(14), gapII = R(78);
     const items = [];
     if (hasSite) items.push({f:'brand.foot',   ic:'globe', t:site.toUpperCase()});
-    if (hasSoc)  items.push({f:'brand.social', ic:'bird',  t:soc.toUpperCase()});
+    if (hasSoc)  items.push({f:'brand.social', ic:'x',     t:soc.toUpperCase()});
     font(ctx, '700', fs);
     let total = gapII * (items.length - 1);
     items.forEach(it => { it.w = isz + gapIT + ctx.measureText(it.t).width; total += it.w; });
     let sx = Math.max(R(24), (W - total) / 2);
     const sy = bandY + bandH + strip / 2;
     items.forEach(it => {
-      plateIcon(ctx, it.ic, sx, sy - isz / 2, isz, '#fff');
+      const iw = it.ic === 'x' ? Math.round(isz * .82) : isz;
+      plateIcon(ctx, it.ic, sx + (isz - iw) / 2, sy - iw / 2, iw, '#fff');
       font(ctx, '700', fs); ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
       ctx.fillText(it.t, sx + isz + gapIT, sy + fs * .35);
       if (ZONES) ZONES.push({f:it.f, x:sx, y:bandY + bandH + R(10), w:it.w, h:strip - R(20),
@@ -1142,17 +1239,25 @@ function plateCover(ctx, s, W, H, th, b, onPhoto){
     });
   }
 
-  /* плашка с аккаунтом вплотную к углу, растушёвка вправо — как в образце */
+  /* плашка с аккаунтом вплотную к углу: то же стекло, правый край растворён.
+     Растворяем весь слой сразу (destination-out по слою), а не кладём поверх ещё один
+     градиент: подкрашивать уже положенное стекло — это и есть та самая мутная заливка. */
   if (!hidden('brand.handle')){
     const oh = offOf(s, 'brand.handle');
     const chipH = R(78), fsz = Math.max(24, sc1(R(46), oh.sc));
     font(ctx, '700', fsz);
     const tw = ctx.measureText(b.handle || '').width, chipW = tw + R(150);
-    const cg = ctx.createLinearGradient(oh.dx, 0, oh.dx + chipW, 0);
-    cg.addColorStop(0,   RGBA(pl.chip, .97));
-    cg.addColorStop(.58, RGBA(pl.chip, .95));
-    cg.addColorStop(1,   RGBA(pl.chip, 0));
-    ctx.fillStyle = cg; ctx.fillRect(oh.dx, oh.dy, chipW, chipH);
+    const lay = glassLayer(ctx, bd, oh.dx, oh.dy, chipW, chipH,
+                           {tint:pl.chip, target:82, min:.30, max:.76, edge:R(2)});
+    const lc = lay.getContext('2d');
+    lc.globalCompositeOperation = 'destination-out';
+    const fade = lc.createLinearGradient(0, 0, lay.width, 0);
+    fade.addColorStop(.52, 'rgba(0,0,0,0)');
+    fade.addColorStop(1,   'rgba(0,0,0,1)');
+    lc.fillStyle = fade; lc.fillRect(0, 0, lay.width, lay.height);
+    lc.globalCompositeOperation = 'source-over';
+    ctx.drawImage(lay, oh.dx, oh.dy);
+    font(ctx, '700', fsz);
     ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
     ctx.fillText(b.handle || '', oh.dx + R(24), oh.dy + chipH / 2 + fsz * .36);
     if (ZONES) ZONES.push({f:'brand.handle', x:oh.dx, y:oh.dy, w:tw + R(48), h:chipH,
@@ -2497,7 +2602,7 @@ addEventListener('resize', () => {
    Текст демо — подсказка, а не выдуманная новость с цифрами. */
 function demoSlide(){
   const d = PJ().demo;
-  return [{kind:'cover', title:d.title, text:d.text, icon:'none', img:null}];
+  return [{kind:coverKind(), title:d.title, text:d.text, icon:'none', img:null}];
 }
 function loadDemo(){
   S.slides = demoSlide();
