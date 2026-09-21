@@ -1298,16 +1298,33 @@ function glassLayer(ctx, bd, x, y, w, h, o){
   const tint = o.tint || '#12141A';
   lc.fillStyle = RGBA(tint, a); lc.fillRect(0, 0, lay.width, lay.height);
 
-  /* Тонкий блик по верхней кромке и волосяная светлая линия — то, чем стекло отличается
-     от заливки. Блик держим коротким и слабым: широкий белый градиент по трети высоты
-     как раз и давал ощущение мутной плёнки. */
-  const sheenH = Math.max(2, Math.round(lay.height * .18));
-  const sh = lc.createLinearGradient(0, 0, 0, sheenH);
-  sh.addColorStop(0, 'rgba(255,255,255,.10)');
+  /* Граница стекла — не линия, а растворение. Гасим край слоя градиентом по альфе:
+     наружу уходит всё сразу — и тон, и размытая подложка, — поэтому кадр входит
+     в плашку постепенно. Белая волосяная кромка отсюда убрана: именно она и читалась
+     как прочерченная линейка. Вместо неё мягкая подсветка гребня, и начинается она
+     там, где стекло уже набрало полную силу. */
+  const ft = Math.max(0, Math.round(o.featherTop || 0));
+  const fb = Math.max(0, Math.round(o.featherBottom || 0));
+  const crest = Math.max(2, Math.round(o.edge == null ? 3 : o.edge) * 7);
+  const sh = lc.createLinearGradient(0, ft, 0, ft + crest);
+  sh.addColorStop(0, 'rgba(255,255,255,.15)');
   sh.addColorStop(1, 'rgba(255,255,255,0)');
-  lc.fillStyle = sh; lc.fillRect(0, 0, lay.width, sheenH);
-  const edge = Math.max(1, Math.round(o.edge == null ? 3 : o.edge));
-  lc.fillStyle = 'rgba(255,255,255,.28)'; lc.fillRect(0, 0, lay.width, edge);
+  lc.fillStyle = sh; lc.fillRect(0, ft, lay.width, crest);
+
+  if (ft || fb){
+    lc.globalCompositeOperation = 'destination-out';
+    if (ft){
+      const g = lc.createLinearGradient(0, 0, 0, ft);
+      g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      lc.fillStyle = g; lc.fillRect(0, 0, lay.width, ft);
+    }
+    if (fb){
+      const g = lc.createLinearGradient(0, lay.height - fb, 0, lay.height);
+      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,1)');
+      lc.fillStyle = g; lc.fillRect(0, lay.height - fb, lay.width, fb);
+    }
+    lc.globalCompositeOperation = 'source-over';
+  }
   return lay;
 }
 
@@ -1337,7 +1354,11 @@ function plateCover(ctx, s, W, H, th, b, onPhoto){
   const k = H / 1350, R = v => Math.round(v * k);
   let phs = null;                       /* место под пустое текстовое поле, если лид не занят */
   const O = offOf(s, 'title');
-  const pad = R(46);
+  /* Поле текста — то же, что у остальных карточек: ползунок «поле карточки» (по умолчанию
+     88 px) плюс минимумы формата. Своё число у обложки прижимало заголовок к обрезу
+     сильнее прочих слайдов, и в карусели это читалось как сбой вёрстки. Красная строка
+     и плашка аккаунта живут по своим правилам: они прижаты к краям по образцу. */
+  const Pd = padOf(), padL = Pd.l, padR = Pd.r, pad = padL;
   const lift = S.fmt === '9x16' ? R(330) : 0;   /* в сторис нижние 400 px закрывает интерфейс */
 
   /* красная строка: сайт и соцсеть — две самостоятельные надписи, каждая берётся и
@@ -1353,7 +1374,7 @@ function plateCover(ctx, s, W, H, th, b, onPhoto){
   const srcH = (hidden('brand.source') || !srcTail) ? 0 : R(44);
 
   /* сначала набираем заголовок: от его высоты зависит полоса */
-  const titleW = Math.max(R(300), W - pad * 2 + O.dw);
+  const titleW = Math.max(R(300), W - padL - padR + O.dw);
   ctx.__w = '700';
   const bandMax = H - strip - lift - R(220);
   let fo = fit(ctx, (s.title || '').toUpperCase(), titleW, 1e7,
@@ -1373,23 +1394,30 @@ function plateCover(ctx, s, W, H, th, b, onPhoto){
   if (!onPhoto && (s.text || '').trim()){
     const OL = offOf(s, 'text');
     ctx.__w = '400';
-    const lead = fit(ctx, s.text, Math.max(R(300), W - pad * 2 + OL.dw), bandY - R(320) + OL.dh,
+    const lead = fit(ctx, s.text, Math.max(R(300), W - padL - padR + OL.dw), bandY - R(320) + OL.dh,
                      sc1(R(46), OL.sc), sc1(R(40), OL.sc), 1.34, '400');
-    drawLines(ctx, lead, pad + OL.dx, R(210) + OL.dy, th.ink);
-    if (ZONES) ZONES.push({f:'text', x:pad + OL.dx, y:R(210) + OL.dy,
-                           w:Math.max(R(300), W - pad * 2 + OL.dw),
+    drawLines(ctx, lead, padL + OL.dx, R(210) + OL.dy, th.ink);
+    if (ZONES) ZONES.push({f:'text', x:padL + OL.dx, y:R(210) + OL.dy,
+                           w:Math.max(R(300), W - padL - padR + OL.dw),
                            h:Math.max(lead.size, lead.lines.length * lead.size * lead.lh),
                            size:lead.size, lh:1.34, weight:'400'});
   } else if (!onPhoto){
-    phs = {x:pad, y:R(210), w:Math.max(R(300), W - pad * 2), size:R(46), lh:1.34, weight:'400'};
+    phs = {x:padL, y:R(210), w:Math.max(R(300), W - padL - padR), size:R(46), lh:1.34, weight:'400'};
   }
 
   /* Полоса заголовка и плашка аккаунта — стекло: кадр под ними виден размытым.
      Подложку снимаем один раз на обе плашки: они не перекрываются, и второй снимок
      дал бы те же пиксели за вдвое большие деньги. */
-  const bd = glassBackdrop(ctx.canvas, R(64));
-  ctx.drawImage(glassLayer(ctx, bd, 0, bandY, W, bandH,
-                           {tint:pl.band, target:84, min:.16, max:.40, edge:R(3)}), 0, bandY);
+  /* Радиус вдвое меньше прежнего: при 64 px кадр под стеклом переставал быть кадром —
+     сквозь плашку не просвечивало ничего, кроме ровного поля. 32 px оставляют формы
+     узнаваемыми, а это и есть смысл стекла.
+     Полосу рисуем с запасом вверх на длину растворения: иначе гаснуть было бы нечему
+     и переход снова упёрся бы в линию. */
+  const bd = glassBackdrop(ctx.canvas, R(32));
+  const feat = R(84);
+  ctx.drawImage(glassLayer(ctx, bd, 0, bandY - feat, W, bandH + feat,
+                           {tint:pl.band, target:84, min:.16, max:.40, edge:R(3),
+                            featherTop:feat}), 0, bandY - feat);
 
   /* заголовок капителью; рамка = вся полоса, поэтому ручка снизу тянет именно её */
   drawLines(ctx, fo, pad + O.dx, bandY + R(22) + O.dy, '#fff');
@@ -1398,8 +1426,8 @@ function plateCover(ctx, s, W, H, th, b, onPhoto){
 
   if (srcH){
     font(ctx, '400', R(26)); ctx.fillStyle = 'rgba(255,255,255,.80)'; ctx.textAlign = 'left';
-    ctx.fillText(String(b.source || ''), pad, bandY + bandH - R(22));
-    if (ZONES) ZONES.push({f:'brand.source', x:pad, y:bandY + bandH - R(48), w:W - pad * 2, h:R(36),
+    ctx.fillText(String(b.source || ''), padL, bandY + bandH - R(22));
+    if (ZONES) ZONES.push({f:'brand.source', x:padL, y:bandY + bandH - R(48), w:W - padL - padR, h:R(36),
                            size:R(26), lh:1.1, weight:'400', fixed:true});
   }
 
@@ -1434,8 +1462,11 @@ function plateCover(ctx, s, W, H, th, b, onPhoto){
     const chipH = R(78), fsz = Math.max(24, sc1(R(46), oh.sc));
     font(ctx, '700', fsz);
     const tw = ctx.measureText(b.handle || '').width, chipW = tw + R(150);
+    /* у плашки открытый край снизу — растворяем его так же, как верх полосы;
+       сверху она прижата к обрезу кадра, там растворять нечего */
     const lay = glassLayer(ctx, bd, oh.dx, oh.dy, chipW, chipH,
-                           {tint:pl.chip, target:82, min:.18, max:.40, edge:R(2)});
+                           {tint:pl.chip, target:82, min:.18, max:.40, edge:R(2),
+                            featherBottom:R(18)});
     const lc = lay.getContext('2d');
     lc.globalCompositeOperation = 'destination-out';
     const fade = lc.createLinearGradient(0, 0, lay.width, 0);
