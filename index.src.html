@@ -1200,8 +1200,16 @@ function plateCover(ctx, s, W, H, th, b, onPhoto){
      Менять кегль можно только руками — A−/A+ или колесом (O.sc). */
   const tsz = sc1(R(70), O.sc);
   const fo = fit(ctx, (s.title || '').toUpperCase(), titleW, 1e7, tsz, tsz, 1.5, '700');
-  const textH = fo.lines.length * fo.size * fo.lh;
-  const bandH = Math.min(H - strip - lift, Math.max(R(128), textH + R(46) + srcH + O.dh));
+  /* Высота полосы — по краям глифов, а не по межстрочию: при lh 1.5 под последней строкой
+     оставалось полкегля пустого интерлиньяжа, и снизу поле выходило втрое больше верхнего.
+     Нижнее поле = верхнему: от края стекла до верха прописной. */
+  const TL = fo.lines.length ? fo.lines : [''];
+  font(ctx, '700', fo.size);
+  const tBase = R(22) + fo.size * .82;
+  const padT = Math.max(0, tBase - ctx.measureText(TL[0]).actualBoundingBoxAscent);
+  const inkB = tBase + (TL.length - 1) * fo.size * fo.lh
+             + Math.max(0, ctx.measureText(TL[TL.length - 1]).actualBoundingBoxDescent);
+  const bandH = Math.min(H - strip - lift, Math.max(R(128), Math.round(inkB + padT) + srcH + O.dh));
   const bandY = H - strip - bandH - lift;
 
   /* середина кадра принадлежит фотографии. Без неё туда идёт лид, а нет лида —
@@ -1239,7 +1247,7 @@ function plateCover(ctx, s, W, H, th, b, onPhoto){
   /* заголовок капителью; рамка = вся полоса, поэтому ручка снизу тянет именно её */
   drawLines(ctx, fo, pad + O.dx, bandY + R(22) + O.dy, '#fff');
   if (ZONES) ZONES.push({f:'title', x:pad + O.dx, y:bandY + R(18) + O.dy, w:titleW,
-                         h:Math.max(textH, bandH - R(26) - srcH), size:fo.size, lh:1.5, weight:'700'});
+                         h:Math.max(fo.size, bandH - R(26) - srcH), size:fo.size, lh:1.5, weight:'700'});
 
   if (srcH){
     font(ctx, '400', R(26)); ctx.fillStyle = 'rgba(255,255,255,.80)'; ctx.textAlign = 'left';
